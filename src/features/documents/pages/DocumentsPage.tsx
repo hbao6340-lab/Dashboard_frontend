@@ -162,7 +162,11 @@ export function DocumentsPage() {
   }
 
   const onAssignSubmit = async (data: AssignFormData) => {
-    await assignMutation.mutateAsync({ id: showAssignDialog.documentId, data })
+    await assignMutation.mutateAsync({
+      id: showAssignDialog.documentId,
+      // Convert date-only input to ISO datetime for backend validation
+      data: { ...data, deadline: data.deadline ? new Date(data.deadline).toISOString() : undefined },
+    })
     setShowAssignDialog({ open: false, documentId: '' })
     assignForm.reset()
     refetch()
@@ -424,7 +428,7 @@ export function DocumentsPage() {
               </div>
               <div>
                 <Label htmlFor="type">Type *</Label>
-                <Select {...uploadForm.register('type')}>
+                <Select value={uploadForm.watch('type')} onValueChange={(v) => uploadForm.setValue('type', v as UploadFormData['type'])}>
                   <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                   <SelectContent>
                     {['PDF', 'DOC', 'DOCX', 'XLS', 'XLSX', 'PPT', 'PPTX', 'TXT', 'JPG', 'JPEG', 'PNG', 'ZIP', 'OTHER'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -433,7 +437,7 @@ export function DocumentsPage() {
               </div>
               <div>
                 <Label htmlFor="confidentiality">Confidentiality</Label>
-                <Select {...uploadForm.register('confidentiality')}>
+                <Select value={uploadForm.watch('confidentiality')} onValueChange={(v) => uploadForm.setValue('confidentiality', v as UploadFormData['confidentiality'])}>
                   <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="PUBLIC">Public</SelectItem>
@@ -445,10 +449,10 @@ export function DocumentsPage() {
               </div>
               <div>
                 <Label htmlFor="categoryId">Category</Label>
-                <Select {...uploadForm.register('categoryId')}>
+                <Select value={uploadForm.watch('categoryId') || 'none'} onValueChange={(v) => uploadForm.setValue('categoryId', v === 'none' ? undefined : v)}>
                   <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
 {categoriesData?.data.categories.map((c: { id: string; name: string; color: string }) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -479,7 +483,7 @@ export function DocumentsPage() {
           <form onSubmit={assignForm.handleSubmit(onAssignSubmit)} className="space-y-4">
             <div>
               <Label htmlFor="assign-user">Người thực hiện *</Label>
-              <Select {...assignForm.register('userId')}>
+              <Select value={assignForm.watch('userId') || ''} onValueChange={(v) => assignForm.setValue('userId', v, { shouldValidate: true })}>
                 <SelectTrigger><SelectValue placeholder="Chọn người thực hiện" /></SelectTrigger>
                 <SelectContent>
                   {assignableUsers.map((u) => <SelectItem key={u.id} value={u.id}>{u.fullName} ({u.username})</SelectItem>)}
@@ -502,7 +506,7 @@ export function DocumentsPage() {
               </div>
               <div>
                 <Label htmlFor="priority">Mức độ ưu tiên</Label>
-                <Select {...assignForm.register('priority')}>
+                <Select value={assignForm.watch('priority') || 'NORMAL'} onValueChange={(v) => assignForm.setValue('priority', v as AssignFormData['priority'])}>
                   <SelectTrigger><SelectValue placeholder="Trung bình" /></SelectTrigger>
                   <SelectContent>
                     {PRIORITIES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
