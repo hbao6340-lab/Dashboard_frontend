@@ -8,9 +8,8 @@ import { Building2, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
 import { useAuth } from '@/features/auth/AuthContext'
 import { cn } from '@/lib/utils'
 
@@ -146,27 +145,6 @@ export function LoginPage() {
             </Button>
           </form>
         </CardContent>
-
-        <CardFooter className="flex flex-col gap-4">
-          <Separator />
-          <p className="text-center text-sm text-muted-foreground">
-            Demo credentials:
-          </p>
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="p-2 rounded bg-muted">
-              <p className="font-medium">Developer</p>
-              <p className="text-muted-foreground">developer / password123</p>
-            </div>
-            <div className="p-2 rounded bg-muted">
-              <p className="font-medium">Admin</p>
-              <p className="text-muted-foreground">admin / password123</p>
-            </div>
-            <div className="p-2 rounded bg-muted">
-              <p className="font-medium">User</p>
-              <p className="text-muted-foreground">user001 / password123</p>
-            </div>
-          </div>
-        </CardFooter>
       </Card>
     </div>
   )

@@ -1,6 +1,7 @@
 // Main Layout Component
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { LayoutDashboard, FileText, CheckSquare, Calendar, FileQuestion, Users, Settings, Bell, LogOut, User, Menu, X, ChevronDown, Building2, Shield, Database } from 'lucide-react'
 import { useAuth } from '@/features/auth/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -12,19 +13,32 @@ import { getInitials } from '@/lib/utils'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
-  { name: 'Documents', href: '/documents', icon: FileText, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
-  { name: 'Tasks', href: '/tasks', icon: CheckSquare, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
-  { name: 'Calendar', href: '/calendar', icon: Calendar, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
-  { name: 'Reports', href: '/reports', icon: FileQuestion, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
-  { name: 'Notifications', href: '/notifications', icon: Bell, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
-  { name: 'Users', href: '/users', icon: Users, roles: ['ADMINISTRATOR', 'DEVELOPER'] },
-  { name: 'Settings', href: '/settings', icon: Settings, roles: ['ADMINISTRATOR', 'DEVELOPER'] },
+  { name: 'Văn bản', href: '/documents', icon: FileText, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
+  { name: 'Nhiệm vụ', href: '/tasks', icon: CheckSquare, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
+  { name: 'Lịch công tác', href: '/calendar', icon: Calendar, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
+  { name: 'Báo cáo', href: '/reports', icon: FileQuestion, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
+  { name: 'Thông báo', href: '/notifications', icon: Bell, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
+  { name: 'Người dùng', href: '/users', icon: Users, roles: ['ADMINISTRATOR', 'DEVELOPER'] },
+  { name: 'Cài đặt', href: '/settings', icon: Settings, roles: ['ADMINISTRATOR', 'DEVELOPER'] },
 ]
 
 export function MainLayout() {
   const { user, logout } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const { data: notifData } = useQuery({
+    queryKey: ['layout-unread-count'],
+    queryFn: async () => {
+      const res = await fetch(`${(import.meta as any).env?.VITE_API_URL || '/api'}/notifications?limit=1`, { credentials: 'include' })
+      return res.json().catch(() => null)
+    },
+    refetchInterval: 30000,
+    enabled: !!user,
+  })
+  const unreadCount = (notifData as any)?.data?.unreadCount ?? 0
+  void location
 
   const filteredNav = navigation.filter(item => 
     user && item.roles.includes(user.role as any)
@@ -127,11 +141,13 @@ export function MainLayout() {
 
           {/* Notifications & User Menu */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative" onClick={() => navigate('/notifications')}>
               <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
-                3
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </Button>
 
             <DropdownMenu>

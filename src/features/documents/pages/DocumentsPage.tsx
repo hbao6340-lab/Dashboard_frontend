@@ -14,6 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { useDocuments, useUploadDocument, useDeleteDocument, useAssignDocument, useCategories, useCreateVersion } from '@/features/documents/hooks/useDocuments'
 import { documentApi } from '@/services/documentApi'
+import { userApi } from '@/services/userApi'
+import { useAuth } from '@/features/auth/AuthContext'
+import { PRIORITIES, DOCUMENT_STATUSES } from '@/lib/constants'
 import { formatDate, formatRelativeTime, getInitials, cn } from '@/lib/utils'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -35,7 +38,8 @@ const assignSchema = z.object({
   responsibility: z.string().optional(),
   instructions: z.string().optional(),
   deadline: z.string().optional(),
-  priority: z.enum(['LOW', 'NORMAL', 'HIGH', 'CRITICAL']).default('NORMAL'),
+  // 3 mức độ ưu tiên: Thấp / Trung bình / Cao
+  priority: z.enum(['LOW', 'NORMAL', 'HIGH']).default('NORMAL'),
   notes: z.string().optional(),
 })
 
@@ -46,12 +50,6 @@ const versionSchema = z.object({
 type UploadFormData = z.infer<typeof uploadSchema>
 type AssignFormData = z.infer<typeof assignSchema>
 type VersionFormData = z.infer<typeof versionSchema>
-
-const mockUsers = [
-  { id: '1', username: 'user001', fullName: 'John Doe', email: 'john@example.com' },
-  { id: '2', username: 'user002', fullName: 'Jane Smith', email: 'jane@example.com' },
-  { id: '3', username: 'admin', fullName: 'Admin User', email: 'admin@example.com' },
-]
 
 const mockTasks = [
   { id: '1', taskNumber: 'TASK-2024-000001', title: 'Community Outreach Planning' },
@@ -64,26 +62,12 @@ const mockReports = [
 ]
 
 function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { label: string; className: string }> = {
-    DRAFT: { label: 'Draft', className: 'bg-gray-100 text-gray-800' },
-    SUBMITTED: { label: 'Submitted', className: 'bg-blue-100 text-blue-800' },
-    ACTIVE: { label: 'Active', className: 'bg-green-100 text-green-800' },
-    IN_PROGRESS: { label: 'In Progress', className: 'bg-yellow-100 text-yellow-800' },
-    COMPLETED: { label: 'Completed', className: 'bg-emerald-100 text-emerald-800' },
-    ARCHIVED: { label: 'Archived', className: 'bg-gray-100 text-gray-600' },
-  }
-  const config = statusConfig[status] || { label: status, className: 'bg-gray-100 text-gray-800' }
+  const config = DOCUMENT_STATUSES[status] || { label: status, className: 'bg-gray-100 text-gray-800' }
   return <Badge className={config.className}>{config.label}</Badge>
 }
 
 function PriorityBadge({ priority }: { priority: string }) {
-  const priorityConfig: Record<string, { label: string; className: string }> = {
-    LOW: { label: 'Low', className: 'bg-gray-100 text-gray-800' },
-    NORMAL: { label: 'Normal', className: 'bg-blue-100 text-blue-800' },
-    HIGH: { label: 'High', className: 'bg-orange-100 text-orange-800' },
-    CRITICAL: { label: 'Critical', className: 'bg-red-100 text-red-800' },
-  }
-  const config = priorityConfig[priority] || { label: priority, className: 'bg-gray-100 text-gray-800' }
+  const config = PRIORITIES.find((p) => p.value === priority) || { label: priority, className: 'bg-gray-100 text-gray-800' }
   return <Badge className={config.className}>{config.label}</Badge>
 }
 
@@ -125,6 +109,10 @@ interface CategoriesData {
 }
 
 export function DocumentsPage() {
+  const { user } = useAuth()
+  // Only admin and above can upload important documents
+  const canUpload = user && ['ADMINISTRATOR', 'DEVELOPER'].includes(user.role)
+  const canAssign = canUpload
   const [searchParams, setSearchParams] = useState({ page: 1, limit: 20, search: '', status: '', type: '', categoryId: '' })
   const [showUploadDialog, setShowUploadDialog] = useState(false)
   const [showAssignDialog, setShowAssignDialog] = useState<{ open: boolean; documentId: string }>({ open: false, documentId: '' })
@@ -134,6 +122,14 @@ export function DocumentsPage() {
 
   const { data: documentsData, isLoading, refetch } = useDocuments(searchParams)
   const { data: categoriesData } = useCategories()
+  // Real user list for assignment (admin/developer only can list users)
+  const { data: usersData } = useQuery({
+    queryKey: ['assignable-users'],
+    queryFn: () => userApi.getUsers({ limit: 100 }),
+    enabled: !!canAssign,
+  })
+  const assignableUsers: Array<{ id: string; username: string; fullName: string }> =
+    (usersData as any)?.data?.users ?? []
   const uploadMutation = useUploadDocument()
   const deleteMutation = useDeleteDocument()
   const assignMutation = useAssignDocument()
@@ -212,13 +208,15 @@ export function DocumentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
-          <p className="text-muted-foreground">Manage and organize documents</p>
+          <h1 className="text-3xl font-bold tracking-tight">Văn bản</h1>
+          <p className="text-muted-foreground">Quản lý văn bản quan trọng (chỉ quản trị được tải lên, giao việc có hạn xử lý)</p>
         </div>
-        <Button onClick={() => setShowUploadDialog(true)}>
-          <Upload className="mr-2 h-4 w-4" />
-          Upload Document
-        </Button>
+        {canUpload && (
+          <Button onClick={() => setShowUploadDialog(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Tải văn bản
+          </Button>
+        )}
       </div>
 
       {/* Search & Filters */}
@@ -356,21 +354,27 @@ export function DocumentsPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => window.open(`/api/documents/${doc.id}/download`, '_blank')}>
                               <Download className="mr-2 h-4 w-4" />
-                              Download
+                              Tải xuống
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleAssignClick(doc.id)}>
-                              <Clock className="mr-2 h-4 w-4" />
-                              Assign
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleVersionClick(doc.id)}>
-                              <Upload className="mr-2 h-4 w-4" />
-                              New Version
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(doc.id)}>
-                              <Archive className="mr-2 h-4 w-4" />
-                              Archive
-                            </DropdownMenuItem>
+                            {canAssign && (
+                              <DropdownMenuItem onClick={() => handleAssignClick(doc.id)}>
+                                <Clock className="mr-2 h-4 w-4" />
+                                Giao việc (hạn + ưu tiên)
+                              </DropdownMenuItem>
+                            )}
+                            {canUpload && (
+                              <DropdownMenuItem onClick={() => handleVersionClick(doc.id)}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Phiên bản mới
+                              </DropdownMenuItem>
+                            )}
+                            {canUpload && <DropdownMenuSeparator />}
+                            {canUpload && (
+                              <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(doc.id)}>
+                                <Archive className="mr-2 h-4 w-4" />
+                                Lưu trữ
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -474,11 +478,11 @@ export function DocumentsPage() {
           </DialogHeader>
           <form onSubmit={assignForm.handleSubmit(onAssignSubmit)} className="space-y-4">
             <div>
-              <Label htmlFor="assign-user">User *</Label>
+              <Label htmlFor="assign-user">Người thực hiện *</Label>
               <Select {...assignForm.register('userId')}>
-                <SelectTrigger><SelectValue placeholder="Select user" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Chọn người thực hiện" /></SelectTrigger>
                 <SelectContent>
-                  {mockUsers.map((u) => <SelectItem key={u.id} value={u.id}>{u.fullName} ({u.username})</SelectItem>)}
+                  {assignableUsers.map((u) => <SelectItem key={u.id} value={u.id}>{u.fullName} ({u.username})</SelectItem>)}
                 </SelectContent>
               </Select>
               {assignForm.formState.errors.userId && <p className="text-sm text-destructive">{assignForm.formState.errors.userId.message}</p>}
@@ -497,14 +501,11 @@ export function DocumentsPage() {
                 <Input id="deadline" type="date" {...assignForm.register('deadline')} />
               </div>
               <div>
-                <Label htmlFor="priority">Priority</Label>
+                <Label htmlFor="priority">Mức độ ưu tiên</Label>
                 <Select {...assignForm.register('priority')}>
-                  <SelectTrigger><SelectValue placeholder="Normal" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Trung bình" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="LOW">Low</SelectItem>
-                    <SelectItem value="NORMAL">Normal</SelectItem>
-                    <SelectItem value="HIGH">High</SelectItem>
-                    <SelectItem value="CRITICAL">Critical</SelectItem>
+                    {PRIORITIES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
