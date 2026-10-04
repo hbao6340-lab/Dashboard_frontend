@@ -17,7 +17,7 @@ export const documentApi = {
     const searchParams = new URLSearchParams()
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) searchParams.append(key, String(value))
+        if (value !== undefined && value !== '') searchParams.append(key, String(value))
       })
     }
     return api.get<PaginatedResponse<Document>>(`/documents?${searchParams.toString()}`)
