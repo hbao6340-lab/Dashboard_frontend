@@ -1,6 +1,6 @@
 // Documents Page with full UI
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { Plus, Search, Filter, Download, Eye, Edit, Archive, FileText, MoreVertical, ChevronDown, Upload, Clock, AlertTriangle, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,7 +34,7 @@ const uploadSchema = z.object({
 })
 
 const assignSchema = z.object({
-  userId: z.string().min(1, 'User is required'),
+  userId: z.string().optional(),
   responsibility: z.string().optional(),
   instructions: z.string().optional(),
   deadline: z.string().optional(),
@@ -119,6 +119,10 @@ export function DocumentsPage() {
   const [showVersionDialog, setShowVersionDialog] = useState<{ open: boolean; documentId: string }>({ open: false, documentId: '' })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [versionFile, setVersionFile] = useState<File | null>(null)
+  const [assignAll, setAssignAll] = useState(false)
+  const [previewDoc, setPreviewDoc] = useState<DocumentRow | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   const { data: documentsData, isLoading, refetch } = useDocuments(searchParams)
   const { data: categoriesData } = useCategories()
@@ -134,6 +138,12 @@ export function DocumentsPage() {
   const deleteMutation = useDeleteDocument()
   const assignMutation = useAssignDocument()
   const versionMutation = useCreateVersion()
+  const assignAllMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { responsibility?: string; instructions?: string; deadline?: string; priority?: 'LOW' | 'NORMAL' | 'HIGH'; notes?: string } }) =>
+      documentApi.assignAllDocument(id, data),
+    onSuccess: (res: any) => toast.success(res?.message || 'Đã giao văn bản cho tất cả mọi người'),
+    onError: (error: any) => toast.error(error.message || 'Giao cho tất cả thất bại'),
+  })
 
   const uploadForm = useForm<UploadFormData>({ resolver: zodResolver(uploadSchema), defaultValues: { confidentiality: 'INTERNAL', type: 'PDF' } })
   const assignForm = useForm<AssignFormData>({ resolver: zodResolver(assignSchema) })
@@ -162,14 +172,60 @@ export function DocumentsPage() {
   }
 
   const onAssignSubmit = async (data: AssignFormData) => {
-    await assignMutation.mutateAsync({
-      id: showAssignDialog.documentId,
-      // Convert date-only input to ISO datetime for backend validation
-      data: { ...data, deadline: data.deadline ? new Date(data.deadline).toISOString() : undefined },
-    })
+    // Convert date-only input to ISO datetime for backend validation
+    const isoDeadline = data.deadline ? new Date(data.deadline).toISOString() : undefined
+    if (assignAll) {
+      await assignAllMutation.mutateAsync({
+        id: showAssignDialog.documentId,
+        data: { responsibility: data.responsibility, instructions: data.instructions, deadline: isoDeadline, priority: data.priority, notes: data.notes },
+      })
+    } else {
+      if (!data.userId) { toast.error('Vui lòng chọn người thực hiện'); return }
+      await assignMutation.mutateAsync({
+        id: showAssignDialog.documentId,
+        data: { userId: data.userId, responsibility: data.responsibility, instructions: data.instructions, deadline: isoDeadline, priority: data.priority, notes: data.notes },
+      })
+    }
     setShowAssignDialog({ open: false, documentId: '' })
+    setAssignAll(false)
     assignForm.reset()
     refetch()
+  }
+
+  const openPreview = async (doc: DocumentRow) => {
+    setPreviewDoc(doc)
+    setPreviewUrl(null)
+    setPreviewLoading(true)
+    try {
+      const blob = await documentApi.previewDocument(doc.id)
+      setPreviewUrl(URL.createObjectURL(blob))
+    } catch (e: any) {
+      toast.error(e.message || 'Không xem trước được văn bản')
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const closePreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(null)
+    setPreviewDoc(null)
+  }
+
+  const handleDownload = async (doc: DocumentRow) => {
+    try {
+      const blob = await documentApi.previewDocument(doc.id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = doc.originalName || doc.title
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+    } catch (e: any) {
+      toast.error(e.message || 'Tải xuống thất bại')
+    }
   }
 
   const onVersionSubmit = async (data: VersionFormData) => {
@@ -309,7 +365,9 @@ export function DocumentsPage() {
                         <div className="flex items-center gap-3">
                           <DocumentTypeIcon type={doc.type} />
                           <div>
-                            <p className="font-medium truncate">{doc.title}</p>
+                            <button className="font-medium truncate hover:underline text-left" onClick={() => openPreview(doc)}>
+                              {doc.title}
+                            </button>
                             <p className="text-sm text-muted-foreground">{doc.documentNumber}</p>
                           </div>
                         </div>
@@ -356,7 +414,11 @@ export function DocumentsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => window.open(`/api/documents/${doc.id}/download`, '_blank')}>
+                            <DropdownMenuItem onClick={() => openPreview(doc)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              Xem
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload(doc)}>
                               <Download className="mr-2 h-4 w-4" />
                               Tải xuống
                             </DropdownMenuItem>
@@ -473,35 +535,49 @@ export function DocumentsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Dialog */}
-      <Dialog open={showAssignDialog.open} onOpenChange={(open) => setShowAssignDialog({ ...showAssignDialog, open })}>
+      {/* Assign Dialog — fully Vietnamese, with Assign All */}
+      <Dialog open={showAssignDialog.open} onOpenChange={(open) => { if (!open) setAssignAll(false); setShowAssignDialog({ ...showAssignDialog, open }) }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Assign Document</DialogTitle>
-            <DialogDescription>Assign this document to a user with responsibilities and deadline</DialogDescription>
+            <DialogTitle>Giao việc</DialogTitle>
+            <DialogDescription>Giao văn bản cho người thực hiện (hoặc tất cả mọi người) kèm trách nhiệm, hạn xử lý và mức độ ưu tiên</DialogDescription>
           </DialogHeader>
           <form onSubmit={assignForm.handleSubmit(onAssignSubmit)} className="space-y-4">
+            <label className="flex items-center gap-2 cursor-pointer rounded-lg bg-muted/50 p-3">
+              <input
+                type="checkbox"
+                checked={assignAll}
+                onChange={(e) => setAssignAll(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <span className="text-sm font-medium">Giao cho tất cả mọi người</span>
+            </label>
+            {assignAll ? (
+              <p className="text-sm text-muted-foreground rounded-lg bg-blue-50 p-3 text-blue-800">
+                Văn bản sẽ được giao cho toàn bộ người dùng đang hoạt động (mỗi người nhận thông báo và hạn xử lý trên lịch của mình).
+              </p>
+            ) : (
+              <div>
+                <Label htmlFor="assign-user">Người thực hiện *</Label>
+                <Select value={assignForm.watch('userId') || ''} onValueChange={(v) => assignForm.setValue('userId', v, { shouldValidate: true })}>
+                  <SelectTrigger><SelectValue placeholder="Chọn người thực hiện" /></SelectTrigger>
+                  <SelectContent>
+                    {assignableUsers.map((u) => <SelectItem key={u.id} value={u.id}>{u.fullName} ({u.username})</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
-              <Label htmlFor="assign-user">Người thực hiện *</Label>
-              <Select value={assignForm.watch('userId') || ''} onValueChange={(v) => assignForm.setValue('userId', v, { shouldValidate: true })}>
-                <SelectTrigger><SelectValue placeholder="Chọn người thực hiện" /></SelectTrigger>
-                <SelectContent>
-                  {assignableUsers.map((u) => <SelectItem key={u.id} value={u.id}>{u.fullName} ({u.username})</SelectItem>)}
-                </SelectContent>
-              </Select>
-              {assignForm.formState.errors.userId && <p className="text-sm text-destructive">{assignForm.formState.errors.userId.message}</p>}
+              <Label htmlFor="responsibility">Trách nhiệm</Label>
+              <Textarea {...assignForm.register('responsibility')} id="responsibility" placeholder="Người thực hiện chịu trách nhiệm việc gì?" rows={2} />
             </div>
             <div>
-              <Label htmlFor="responsibility">Responsibility</Label>
-              <Textarea {...assignForm.register('responsibility')} id="responsibility" placeholder="What is the user responsible for?" rows={2} />
-            </div>
-            <div>
-              <Label htmlFor="instructions">Instructions</Label>
-              <Textarea {...assignForm.register('instructions')} id="instructions" placeholder="Specific instructions for this assignment" rows={2} />
+              <Label htmlFor="instructions">Hướng dẫn cụ thể</Label>
+              <Textarea {...assignForm.register('instructions')} id="instructions" placeholder="Hướng dẫn chi tiết khi thực hiện" rows={2} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="deadline">Deadline</Label>
+                <Label htmlFor="deadline">Hạn xử lý</Label>
                 <Input id="deadline" type="date" {...assignForm.register('deadline')} />
               </div>
               <div>
@@ -515,13 +591,14 @@ export function DocumentsPage() {
               </div>
             </div>
             <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea {...assignForm.register('notes')} id="notes" placeholder="Additional notes" rows={2} />
+              <Label htmlFor="notes">Ghi chú thêm</Label>
+              <Textarea {...assignForm.register('notes')} id="notes" placeholder="Ghi chú thêm (nếu có)" rows={2} />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowAssignDialog({ open: false, documentId: '' })}>Cancel</Button>
-              <Button type="submit" disabled={assignMutation.isPending}>
-                {assignMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Assign'}
+              <Button type="button" variant="outline" onClick={() => { setAssignAll(false); setShowAssignDialog({ open: false, documentId: '' }) }}>Hủy</Button>
+              <Button type="submit" disabled={assignMutation.isPending || assignAllMutation.isPending}>
+                {(assignMutation.isPending || assignAllMutation.isPending) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {assignAll ? 'Giao cho tất cả' : 'Giao việc'}
               </Button>
             </DialogFooter>
           </form>
@@ -552,6 +629,45 @@ export function DocumentsPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog — popup overlay showing the document */}
+      <Dialog open={!!previewDoc} onOpenChange={(o) => !o && closePreview()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{previewDoc?.title}</DialogTitle>
+            <DialogDescription>
+              {previewDoc && `${previewDoc.documentNumber} • ${previewDoc.type} • ${previewDoc.category?.name ?? 'Chưa phân loại'} • ${previewDoc.uploadedBy.fullName} • ${formatDate(previewDoc.createdAt)}`}
+            </DialogDescription>
+          </DialogHeader>
+          {previewLoading ? (
+            <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          ) : previewUrl && previewDoc ? (
+            ['JPG', 'JPEG', 'PNG'].includes(previewDoc.type) ? (
+              <img src={previewUrl} alt={previewDoc.title} className="max-h-[60vh] mx-auto rounded border" />
+            ) : previewDoc.type === 'PDF' ? (
+              <iframe src={previewUrl} title={previewDoc.title} className="w-full h-[60vh] rounded border" />
+            ) : (
+              <div className="flex flex-col items-center gap-3 py-12 text-muted-foreground">
+                <FileText className="h-16 w-16" />
+                <p>Không hỗ trợ xem trước định dạng {previewDoc.type} trong ứng dụng.</p>
+                <Button onClick={() => handleDownload(previewDoc)}>
+                  <Download className="mr-2 h-4 w-4" /> Tải xuống để xem
+                </Button>
+              </div>
+            )
+          ) : (
+            !previewLoading && <p className="text-center text-muted-foreground py-12">Không tải được nội dung văn bản.</p>
+          )}
+          <DialogFooter>
+            {previewDoc && (
+              <Button variant="outline" onClick={() => handleDownload(previewDoc)}>
+                <Download className="mr-2 h-4 w-4" /> Tải xuống
+              </Button>
+            )}
+            <Button variant="outline" onClick={closePreview}>Đóng</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

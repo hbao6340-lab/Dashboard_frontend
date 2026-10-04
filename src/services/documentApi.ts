@@ -48,9 +48,27 @@ export const documentApi = {
     responsibility?: string
     instructions?: string
     deadline?: string
-    priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL'
+    priority?: 'LOW' | 'NORMAL' | 'HIGH'
     notes?: string
   }) => api.post<{ success: boolean; data: { assignment: DocumentAssignment } }>(`/documents/${id}/assign`, data),
+
+  // Assign document to everyone (all active users)
+  assignAllDocument: (id: string, data: {
+    responsibility?: string
+    instructions?: string
+    deadline?: string
+    priority?: 'LOW' | 'NORMAL' | 'HIGH'
+    notes?: string
+  }) => api.post<{ success: boolean; message: string; data: { assigned: number } }>(`/documents/${id}/assign-all`, data),
+
+  // Fetch the file as a blob for in-app preview (images, PDF)
+  previewDocument: async (id: string): Promise<Blob> => {
+    const res = await fetch(`${(import.meta as any).env?.VITE_API_URL || '/api'}/documents/${id}/download`, {
+      credentials: 'include',
+    })
+    if (!res.ok) throw new Error('Không tải được văn bản để xem trước')
+    return res.blob()
+  },
 
   // Get document assignments
   getAssignments: (id: string) => api.get<{ success: boolean; data: { assignments: DocumentAssignment[] } }>(`/documents/${id}/assignments`),
