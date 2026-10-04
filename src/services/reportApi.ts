@@ -46,4 +46,25 @@ export const reportApi = {
     return data
   },
   getAttachments: (id: string) => api.get<{ success: boolean; data: { attachments: Array<{ id: string; fileName: string; fileSize: string; mimeType: string; createdAt: string }> } }>(`/reports/${id}/attachments`),
+  previewAttachment: async (id: string, attachmentId: string): Promise<Blob> => {
+    const base = (import.meta as any).env?.VITE_API_URL || '/api'
+    const res = await fetch(`${base}/reports/${id}/attachments/${attachmentId}/download`, { credentials: 'include' })
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      throw new Error(data?.message || 'Không tải được tệp để xem trước')
+    }
+    return res.blob()
+  },
+  downloadAttachment: async (id: string, attachmentId: string, fileName: string) => {
+    const { previewAttachment } = reportApi
+    const blob = await previewAttachment(id, attachmentId)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 5000)
+  },
 }

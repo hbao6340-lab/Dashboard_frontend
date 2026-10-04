@@ -1,7 +1,7 @@
-// Reports Page — users submit reports/issues with doc, docx, pdf attachments
+// Reports Page — short & brief form, attach pdf/word files, preview attachments
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Loader2, Send, Paperclip, Download } from 'lucide-react'
+import { Plus, Loader2, Send, Paperclip, Download, Eye, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/features/auth/AuthContext'
 import { reportApi } from '@/services/reportApi'
+import { FilePreviewDialog } from '@/components/FilePreviewDialog'
 import { REPORT_STATUSES } from '@/lib/constants'
 import { toast } from 'sonner'
 
@@ -25,8 +26,14 @@ export function ReportsPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [detail, setDetail] = useState<any | null>(null)
   const [attachFile, setAttachFile] = useState<File | null>(null)
-  const [form, setForm] = useState({ title: '', type: 'GENERAL', subject: '', summary: '', content: '', problems: '', recommendations: '' })
+  // Short & brief form: title + type + content + files
+  const [form, setForm] = useState({ title: '', type: 'GENERAL', content: '' })
+  const [newFiles, setNewFiles] = useState<File[]>([])
   const [review, setReview] = useState({ status: 'APPROVED', comments: '' })
+  // Attachment preview popup
+  const [previewAtt, setPreviewAtt] = useState<any | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['reports', search],
@@ -46,8 +53,21 @@ export function ReportsPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: () => reportApi.createReport({ title: form.title, type: form.type, subject: form.subject || undefined, summary: form.summary || undefined, content: form.content || undefined, problems: form.problems || undefined, recommendations: form.recommendations || undefined }),
-    onSuccess: () => { toast.success('Đã tạo báo cáo'); setShowCreate(false); setForm({ title: '', type: 'GENERAL', subject: '', summary: '', content: '', problems: '', recommendations: '' }); queryClient.invalidateQueries({ queryKey: ['reports'] }) },
+    mutationFn: async () => {
+      const created: any = await reportApi.createReport({ title: form.title, type: form.type, content: form.content || undefined })
+      const reportId = created.data.report.id
+      for (const f of newFiles) {
+        await reportApi.uploadAttachment(reportId, f)
+      }
+      return created
+    },
+    onSuccess: () => {
+      toast.success(newFiles.length > 0 ? `Đã tạo báo cáo kèm ${newFiles.length} tệp` : 'Đã tạo báo cáo')
+      setShowCreate(false)
+      setForm({ title: '', type: 'GENERAL', content: '' })
+      setNewFiles([])
+      queryClient.invalidateQueries({ queryKey: ['reports'] })
+    },
     onError: (e: any) => toast.error(e.message || 'Tạo báo cáo thất bại'),
   })
 
@@ -76,6 +96,36 @@ export function ReportsPage() {
       refetchAttach()
     } catch (e: any) {
       toast.error(e.message || 'Tải tệp thất bại')
+    }
+  }
+
+  const openAttachmentPreview = async (a: any) => {
+    if (!detail) return
+    setPreviewAtt(a)
+    setPreviewUrl(null)
+    setPreviewLoading(true)
+    try {
+      const blob = await reportApi.previewAttachment(detail.id, a.id)
+      setPreviewUrl(URL.createObjectURL(blob))
+    } catch (e: any) {
+      toast.error(e.message || 'Không xem trước được tệp')
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const closeAttachmentPreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(null)
+    setPreviewAtt(null)
+  }
+
+  const downloadAttachment = async (a: any) => {
+    if (!detail) return
+    try {
+      await reportApi.downloadAttachment(detail.id, a.id, a.fileName)
+    } catch (e: any) {
+      toast.error(e.message || 'Tải xuống thất bại')
     }
   }
 
@@ -123,12 +173,12 @@ export function ReportsPage() {
         </CardContent>
       </Card>
 
-      {/* Create */}
+      {/* Create — short & brief */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>Tạo báo cáo / kiến nghị mới</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Tạo báo cáo / kiến nghị</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Tiêu đề *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
+            <div><Label>Tiêu đề *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Báo cáo tháng 10..." /></div>
             <div>
               <Label>Loại</Label>
               <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
@@ -138,15 +188,29 @@ export function ReportsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Chủ đề</Label><Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></div>
-            <div><Label>Tóm tắt</Label><Textarea value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} rows={2} /></div>
-            <div><Label>Nội dung</Label><Textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={4} /></div>
-            <div><Label>Vấn đề gặp phải</Label><Textarea value={form.problems} onChange={(e) => setForm({ ...form, problems: e.target.value })} rows={2} /></div>
-            <div><Label>Kiến nghị</Label><Textarea value={form.recommendations} onChange={(e) => setForm({ ...form, recommendations: e.target.value })} rows={2} /></div>
+            <div><Label>Nội dung</Label><Textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Tóm tắt nội dung, vấn đề, kiến nghị..." rows={4} /></div>
+            <div>
+              <Label>Đính kèm tệp (pdf, word...)</Label>
+              <Input
+                type="file"
+                multiple
+                accept=".doc,.docx,.pdf,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.zip"
+                onChange={(e) => setNewFiles(Array.from(e.target.files ?? []))}
+              />
+              {newFiles.length > 0 && (
+                <div className="mt-1 space-y-1">
+                  {newFiles.map((f, i) => (
+                    <p key={i} className="text-sm text-muted-foreground flex items-center gap-1">
+                      <FileText className="h-3 w-3" /> {f.name} ({(f.size / 1024).toFixed(0)} KB)
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Hủy</Button>
-            <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !form.title}>Tạo nháp</Button>
+            <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !form.title}>Tạo báo cáo</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -158,9 +222,9 @@ export function ReportsPage() {
           {fullDetail && (
             <div className="space-y-3 text-sm">
               <p><b>Số hiệu:</b> {fullDetail.reportNumber} • <b>Trạng thái:</b> {REPORT_STATUSES[fullDetail.status] ?? fullDetail.status}</p>
+              {fullDetail.content && <p><b>Nội dung:</b> {fullDetail.content}</p>}
               {fullDetail.subject && <p><b>Chủ đề:</b> {fullDetail.subject}</p>}
               {fullDetail.summary && <p><b>Tóm tắt:</b> {fullDetail.summary}</p>}
-              {fullDetail.content && <p><b>Nội dung:</b> {fullDetail.content}</p>}
               {fullDetail.problems && <p><b>Vấn đề:</b> {fullDetail.problems}</p>}
               {fullDetail.recommendations && <p><b>Kiến nghị:</b> {fullDetail.recommendations}</p>}
               <div>
@@ -168,10 +232,11 @@ export function ReportsPage() {
                 {attachments.length === 0 && <p className="text-muted-foreground">Chưa có tệp nào.</p>}
                 {attachments.map((a: any) => (
                   <div key={a.id} className="flex items-center justify-between p-2 rounded bg-muted/50 mb-1">
-                    <span>{a.fileName}</span>
-                    <a href={`${(import.meta as any).env?.VITE_API_URL || '/api'}/reports/${detail.id}/attachments/${a.id}/download`} target="_blank" rel="noreferrer">
-                      <Button size="sm" variant="outline"><Download className="h-3 w-3 mr-1" /> Tải</Button>
-                    </a>
+                    <span className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" />{a.fileName}</span>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => openAttachmentPreview(a)}><Eye className="h-3 w-3 mr-1" /> Xem</Button>
+                      <Button size="sm" variant="outline" onClick={() => downloadAttachment(a)}><Download className="h-3 w-3 mr-1" /> Tải</Button>
+                    </div>
                   </div>
                 ))}
                 <div className="flex gap-2 mt-2">
@@ -203,6 +268,21 @@ export function ReportsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Attachment preview popup */}
+      {previewAtt && (
+        <FilePreviewDialog
+          open={!!previewAtt}
+          onClose={closeAttachmentPreview}
+          title={previewAtt.fileName}
+          subtitle={`Đính kèm của báo cáo ${fullDetail?.reportNumber ?? ''}`}
+          fileName={previewAtt.fileName}
+          mimeType={previewAtt.mimeType}
+          blobUrl={previewUrl}
+          loading={previewLoading}
+          onDownload={() => downloadAttachment(previewAtt)}
+        />
+      )}
     </div>
   )
 }

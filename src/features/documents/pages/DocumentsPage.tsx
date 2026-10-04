@@ -17,6 +17,7 @@ import { documentApi } from '@/services/documentApi'
 import { userApi } from '@/services/userApi'
 import { useAuth } from '@/features/auth/AuthContext'
 import { PRIORITIES, DOCUMENT_STATUSES } from '@/lib/constants'
+import { FilePreviewDialog } from '@/components/FilePreviewDialog'
 import { formatDate, formatRelativeTime, getInitials, cn } from '@/lib/utils'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -633,43 +634,19 @@ export function DocumentsPage() {
       </Dialog>
 
       {/* Preview Dialog — popup overlay showing the document */}
-      <Dialog open={!!previewDoc} onOpenChange={(o) => !o && closePreview()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{previewDoc?.title}</DialogTitle>
-            <DialogDescription>
-              {previewDoc && `${previewDoc.documentNumber} • ${previewDoc.type} • ${previewDoc.category?.name ?? 'Chưa phân loại'} • ${previewDoc.uploadedBy.fullName} • ${formatDate(previewDoc.createdAt)}`}
-            </DialogDescription>
-          </DialogHeader>
-          {previewLoading ? (
-            <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-          ) : previewUrl && previewDoc ? (
-            ['JPG', 'JPEG', 'PNG'].includes(previewDoc.type) ? (
-              <img src={previewUrl} alt={previewDoc.title} className="max-h-[60vh] mx-auto rounded border" />
-            ) : previewDoc.type === 'PDF' ? (
-              <iframe src={previewUrl} title={previewDoc.title} className="w-full h-[60vh] rounded border" />
-            ) : (
-              <div className="flex flex-col items-center gap-3 py-12 text-muted-foreground">
-                <FileText className="h-16 w-16" />
-                <p>Không hỗ trợ xem trước định dạng {previewDoc.type} trong ứng dụng.</p>
-                <Button onClick={() => handleDownload(previewDoc)}>
-                  <Download className="mr-2 h-4 w-4" /> Tải xuống để xem
-                </Button>
-              </div>
-            )
-          ) : (
-            !previewLoading && <p className="text-center text-muted-foreground py-12">Không tải được nội dung văn bản.</p>
-          )}
-          <DialogFooter>
-            {previewDoc && (
-              <Button variant="outline" onClick={() => handleDownload(previewDoc)}>
-                <Download className="mr-2 h-4 w-4" /> Tải xuống
-              </Button>
-            )}
-            <Button variant="outline" onClick={closePreview}>Đóng</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {previewDoc && (
+        <FilePreviewDialog
+          open={!!previewDoc}
+          onClose={closePreview}
+          title={previewDoc.title}
+          subtitle={`${previewDoc.documentNumber} • ${previewDoc.type} • ${previewDoc.category?.name ?? 'Chưa phân loại'} • ${previewDoc.uploadedBy.fullName} • ${formatDate(previewDoc.createdAt)}`}
+          fileName={previewDoc.originalName || previewDoc.title}
+          mimeType={previewDoc.mimeType}
+          blobUrl={previewUrl}
+          loading={previewLoading}
+          onDownload={() => handleDownload(previewDoc)}
+        />
+      )}
     </div>
   )
 }
