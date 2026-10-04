@@ -66,7 +66,13 @@ export const documentApi = {
     const res = await fetch(`${(import.meta as any).env?.VITE_API_URL || '/api'}/documents/${id}/download`, {
       credentials: 'include',
     })
-    if (!res.ok) throw new Error('Không tải được văn bản để xem trước')
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      if (data?.message === 'File not found' || data?.errorCode === 'NOT_FOUND') {
+        throw new Error('Tệp gốc của văn bản này đã bị mất trên server (do deploy lại). Hãy tải tệp lên lại bằng "Phiên bản mới".')
+      }
+      throw new Error(data?.message || 'Không tải được văn bản để xem trước')
+    }
     return res.blob()
   },
 
