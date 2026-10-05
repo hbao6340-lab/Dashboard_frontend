@@ -10,21 +10,21 @@ export function ForbiddenPage() {
       <Card className="w-full max-w-md text-center">
         <CardContent className="py-12">
           <Lock className="mx-auto h-16 w-16 text-muted-foreground/50" />
-          <h1 className="mt-4 text-3xl font-bold">Access Denied</h1>
+          <h1 className="mt-4 text-3xl font-bold">Không có quyền truy cập</h1>
           <p className="mt-2 text-muted-foreground">
-            You don't have permission to access this page. Please contact your administrator if you believe this is an error.
+            Đồng chí không có quyền truy cập trang này. Vui lòng liên hệ quản trị viên nếu cho rằng đây là nhầm lẫn.
           </p>
           <div className="mt-6 flex gap-4 justify-center">
             <Button asChild>
               <Link to="/dashboard">
                 <Home className="mr-2 h-4 w-4" />
-                Go to Dashboard
+                Về trang chủ
               </Link>
             </Button>
             <Button variant="outline" asChild>
               <Link to="/dashboard">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Go Back
+                Quay lại
               </Link>
             </Button>
           </div>

@@ -66,9 +66,9 @@ export function useUploadDocument() {
     mutationFn: (formData: FormData) => documentApi.uploadDocument(formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: documentKeys.lists() })
-      toast.success('Document uploaded successfully')
+      toast.success('Đã tải văn bản lên')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to upload document'),
+    onError: (error: any) => toast.error(error.message || 'Tải văn bản thất bại'),
   })
 }
 
@@ -79,9 +79,9 @@ export function useUpdateDocument() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: documentKeys.lists() })
       queryClient.invalidateQueries({ queryKey: documentKeys.detail(id) })
-      toast.success('Document updated successfully')
+      toast.success('Đã cập nhật văn bản')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to update document'),
+    onError: (error: any) => toast.error(error.message || 'Cập nhật văn bản thất bại'),
   })
 }
 
@@ -91,9 +91,9 @@ export function useDeleteDocument() {
     mutationFn: (id: string) => documentApi.deleteDocument(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: documentKeys.lists() })
-      toast.success('Document archived successfully')
+      toast.success('Đã lưu trữ văn bản')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to archive document'),
+    onError: (error: any) => toast.error(error.message || 'Lưu trữ văn bản thất bại'),
   })
 }
 
@@ -104,9 +104,9 @@ export function useAssignDocument() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: documentKeys.assignments(id) })
       queryClient.invalidateQueries({ queryKey: documentKeys.detail(id) })
-      toast.success('Document assigned successfully')
+      toast.success('Đã giao văn bản')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to assign document'),
+    onError: (error: any) => toast.error(error.message || 'Giao văn bản thất bại'),
   })
 }
 
@@ -117,9 +117,9 @@ export function useUpdateAssignment() {
       documentApi.updateAssignment(id, assignmentId, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: documentKeys.assignments(id) })
-      toast.success('Assignment updated successfully')
+      toast.success('Đã cập nhật phân công')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to update assignment'),
+    onError: (error: any) => toast.error(error.message || 'Cập nhật phân công thất bại'),
   })
 }
 
@@ -130,9 +130,9 @@ export function useCreateVersion() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: documentKeys.versions(id) })
       queryClient.invalidateQueries({ queryKey: documentKeys.detail(id) })
-      toast.success('New version created successfully')
+      toast.success('Đã tạo phiên bản mới')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to create version'),
+    onError: (error: any) => toast.error(error.message || 'Tạo phiên bản thất bại'),
   })
 }
 
@@ -142,9 +142,9 @@ export function useCreateCategory() {
     mutationFn: (data: any) => categoryApi.createCategory(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.list() })
-      toast.success('Category created successfully')
+      toast.success('Đã tạo lĩnh vực')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to create category'),
+    onError: (error: any) => toast.error(error.message || 'Tạo lĩnh vực thất bại'),
   })
 }
 
@@ -154,9 +154,9 @@ export function useUpdateCategory() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Category> }) => categoryApi.updateCategory(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.list() })
-      toast.success('Category updated successfully')
+      toast.success('Đã cập nhật lĩnh vực')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to update category'),
+    onError: (error: any) => toast.error(error.message || 'Cập nhật lĩnh vực thất bại'),
   })
 }
 
@@ -166,8 +166,8 @@ export function useDeleteCategory() {
     mutationFn: (id: string) => categoryApi.deleteCategory(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.list() })
-      toast.success('Category deleted successfully')
+      toast.success('Đã xóa lĩnh vực')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to delete category'),
+    onError: (error: any) => toast.error(error.message || 'Xóa lĩnh vực thất bại'),
   })
 }

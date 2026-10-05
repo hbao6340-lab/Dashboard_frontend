@@ -1,25 +1,33 @@
-// Login Page
+// Login Page — Đoàn TNCS Hồ Chí Minh theme
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Building2, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAuth } from '@/features/auth/AuthContext'
-import { cn } from '@/lib/utils'
+import { BrandLogos } from '@/components/BrandLogos'
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'Username or email is required'),
-  password: z.string().min(1, 'Password is required'),
+  username: z.string().min(1, 'Vui lòng nhập tên đăng nhập'),
+  password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
   rememberMe: z.boolean().optional(),
 })
 
 type LoginForm = z.infer<typeof loginSchema>
+
+function GoldStar({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12 1.8l3.1 6.5 7.1.9-5.2 4.9 1.3 7-6.3-3.5-6.3 3.5 1.3-7L1.8 9.2l7.1-.9L12 1.8z" />
+    </svg>
+  )
+}
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -57,15 +65,19 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-      <Card className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-red-950 via-red-800 to-red-600 px-4 py-8">
+      {/* Decorative gold stars */}
+      <GoldStar className="pointer-events-none absolute -left-10 -top-10 h-64 w-64 text-yellow-400/10" />
+      <GoldStar className="pointer-events-none absolute -bottom-16 -right-12 h-80 w-80 text-yellow-400/10" />
+      <GoldStar className="pointer-events-none absolute right-[12%] top-[10%] h-16 w-16 text-yellow-400/20" />
+      <GoldStar className="pointer-events-none absolute bottom-[14%] left-[10%] h-10 w-10 text-yellow-400/20" />
+
+      <Card className="relative w-full max-w-md overflow-hidden border-t-4 border-t-yellow-400 shadow-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <Building2 className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <CardTitle className="text-2xl">KHÔNG GIAN ĐOÀN TÂN HƯNG</CardTitle>
-          <CardDescription>
-            HỆ THỐNG QUẢN LÝ VĂN BẢN VÀ ĐIỀU HÀNH
+          <BrandLogos size="lg" className="mb-4" />
+          <CardTitle className="text-2xl text-red-800">KHÔNG GIAN ĐOÀN TÂN HƯNG</CardTitle>
+          <CardDescription className="font-medium text-red-700">
+            HỆ THỐNG TÁC NGHIỆP ĐOÀN - HỘI - ĐỘI
           </CardDescription>
         </CardHeader>
 
@@ -112,7 +124,7 @@ export function LoginPage() {
                   type="button"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -129,7 +141,7 @@ export function LoginPage() {
                   {...register('rememberMe')}
                   className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
-                <span className="text-sm">Remember me</span>
+                <span className="text-sm">Ghi nhớ đăng nhập</span>
               </label>
             </div>
 
@@ -144,6 +156,10 @@ export function LoginPage() {
               )}
             </Button>
           </form>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Đoàn TNCS Hồ Chí Minh • Hội LHTN Việt Nam • Đội TNTP Hồ Chí Minh
+          </p>
         </CardContent>
       </Card>
     </div>

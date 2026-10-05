@@ -10,21 +10,21 @@ export function NotFoundPage() {
       <Card className="w-full max-w-md text-center">
         <CardContent className="py-12">
           <h1 className="text-9xl font-bold text-muted-foreground/50">404</h1>
-          <h2 className="mt-4 text-2xl font-semibold">Page Not Found</h2>
+          <h2 className="mt-4 text-2xl font-semibold">Không tìm thấy trang</h2>
           <p className="mt-2 text-muted-foreground">
-            The page you're looking for doesn't exist or has been moved.
+            Trang bạn tìm không tồn tại hoặc đã được di chuyển.
           </p>
           <div className="mt-6 flex gap-4 justify-center">
             <Button asChild>
               <Link to="/dashboard">
                 <Home className="mr-2 h-4 w-4" />
-                Go to Dashboard
+                Về trang chủ
               </Link>
             </Button>
             <Button variant="outline" asChild>
               <Link to="/dashboard">
                 <Search className="mr-2 h-4 w-4" />
-                Search
+                Tìm kiếm
               </Link>
             </Button>
           </div>

@@ -25,7 +25,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 
 const uploadSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, 'Vui lòng nhập tiêu đề'),
   description: z.string().optional(),
   type: z.enum(['PDF', 'DOC', 'DOCX', 'XLS', 'XLSX', 'PPT', 'PPTX', 'TXT', 'JPG', 'JPEG', 'PNG', 'ZIP', 'OTHER']),
   categoryId: z.string().optional(),
@@ -161,7 +161,7 @@ export function DocumentsPage() {
   }
 
   const onUploadSubmit = async (data: UploadFormData) => {
-    if (!selectedFile) { toast.error('Please select a file'); return }
+    if (!selectedFile) { toast.error('Vui lòng chọn tệp'); return }
     const formData = new FormData()
     formData.append('file', selectedFile)
     Object.entries(data).forEach(([key, value]) => { if (value) formData.append(key, value) })
@@ -230,7 +230,7 @@ export function DocumentsPage() {
   }
 
   const onVersionSubmit = async (data: VersionFormData) => {
-    if (!versionFile) { toast.error('Please select a file'); return }
+    if (!versionFile) { toast.error('Vui lòng chọn tệp'); return }
     const formData = new FormData()
     formData.append('file', versionFile)
     if (data.changeNotes) formData.append('changeNotes', data.changeNotes)
@@ -242,7 +242,7 @@ export function DocumentsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to archive this document?')) {
+    if (window.confirm('Chắc chắn lưu trữ văn bản này?')) {
       await deleteMutation.mutateAsync(id)
       refetch()
     }
@@ -285,31 +285,31 @@ export function DocumentsPage() {
         <CardContent className="pt-6">
           <form onSubmit={handleSearch} className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
-              <Label htmlFor="search" className="sr-only">Search</Label>
+              <Label htmlFor="search" className="sr-only">Tìm kiếm</Label>
               <Input
                 id="search"
-                placeholder="Search documents..."
+                placeholder="Tìm kiếm văn bản..."
                 value={searchParams.search}
                 onChange={(e) => setSearchParams(prev => ({ ...prev, search: e.target.value }))}
                 className="max-w-sm"
               />
             </div>
             <Select value={searchParams.status} onValueChange={handleStatusChange}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Mọi trạng thái" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
-                <SelectItem value="DRAFT">Draft</SelectItem>
-                <SelectItem value="SUBMITTED">Submitted</SelectItem>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="ARCHIVED">Archived</SelectItem>
+                <SelectItem value="">Mọi trạng thái</SelectItem>
+                <SelectItem value="DRAFT">Nháp</SelectItem>
+                <SelectItem value="SUBMITTED">Đã gửi</SelectItem>
+                <SelectItem value="ACTIVE">Đang hiệu lực</SelectItem>
+                <SelectItem value="IN_PROGRESS">Đang thực hiện</SelectItem>
+                <SelectItem value="COMPLETED">Hoàn thành</SelectItem>
+                <SelectItem value="ARCHIVED">Lưu trữ</SelectItem>
               </SelectContent>
             </Select>
             <Select value={searchParams.type} onValueChange={handleTypeChange}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Types" /></SelectTrigger>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Mọi định dạng" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="">Mọi định dạng</SelectItem>
                 <SelectItem value="PDF">PDF</SelectItem>
                 <SelectItem value="DOC">DOC</SelectItem>
                 <SelectItem value="DOCX">DOCX</SelectItem>
@@ -324,13 +324,13 @@ export function DocumentsPage() {
               </SelectContent>
             </Select>
             <Select value={searchParams.categoryId} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="All Categories" /></SelectTrigger>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Mọi lĩnh vực" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="">Mọi lĩnh vực</SelectItem>
                 {categoriesData?.data.categories.map((c: { id: string; name: string; color: string }) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button type="submit"><Search className="mr-2 h-4 w-4" /> Search</Button>
+            <Button type="submit"><Search className="mr-2 h-4 w-4" /> Tìm kiếm</Button>
           </form>
         </CardContent>
       </Card>
@@ -341,21 +341,21 @@ export function DocumentsPage() {
           {isLoading ? (
             <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
           ) : documentsData?.data.documents.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">No documents found</div>
+            <div className="text-center py-12 text-muted-foreground">Chưa có văn bản nào</div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12"><input type="checkbox" className="h-4 w-4 rounded border-gray-300" /></TableHead>
-                    <TableHead>Document</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Uploaded By</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Assignees</TableHead>
-                    <TableHead className="w-32">Actions</TableHead>
+                    <TableHead>Văn bản</TableHead>
+                    <TableHead>Định dạng</TableHead>
+                    <TableHead>Lĩnh vực</TableHead>
+                    <TableHead>Người tải lên</TableHead>
+                    <TableHead>Ngày tải</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Người thực hiện</TableHead>
+                    <TableHead className="w-32">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -456,14 +456,14 @@ export function DocumentsPage() {
           {documentsData && documentsData.data.pagination.totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                Page {documentsData.data.pagination.page} of {documentsData.data.pagination.totalPages} ({documentsData.data.pagination.total} total)
+                Trang {documentsData.data.pagination.page} / {documentsData.data.pagination.totalPages} ({documentsData.data.pagination.total} văn bản)
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={documentsData.data.pagination.page === 1} onClick={() => setSearchParams(p => ({ ...p, page: p.page - 1 }))}>
-                  Previous
+                  Trước
                 </Button>
                 <Button variant="outline" size="sm" disabled={documentsData.data.pagination.page === documentsData.data.pagination.totalPages} onClick={() => setSearchParams(p => ({ ...p, page: p.page + 1 }))}>
-                  Next
+                  Sau
                 </Button>
               </div>
             </div>
@@ -475,61 +475,61 @@ export function DocumentsPage() {
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Upload Document</DialogTitle>
-            <DialogDescription>Fill in the details and select a file to upload</DialogDescription>
+            <DialogTitle>Tải văn bản lên</DialogTitle>
+            <DialogDescription>Điền thông tin và chọn tệp để tải lên (chỉ quản trị)</DialogDescription>
           </DialogHeader>
           <form onSubmit={uploadForm.handleSubmit(onUploadSubmit)} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <Label htmlFor="title">Title *</Label>
-                <Input {...uploadForm.register('title')} id="title" placeholder="Document title" />
+                <Label htmlFor="title">Tiêu đề *</Label>
+                <Input {...uploadForm.register('title')} id="title" placeholder="Tiêu đề văn bản" />
                 {uploadForm.formState.errors.title && <p className="text-sm text-destructive">{uploadForm.formState.errors.title.message}</p>}
               </div>
               <div className="sm:col-span-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea {...uploadForm.register('description')} id="description" placeholder="Optional description" rows={3} />
+                <Label htmlFor="description">Mô tả</Label>
+                <Textarea {...uploadForm.register('description')} id="description" placeholder="Mô tả thêm (không bắt buộc)" rows={3} />
               </div>
               <div>
-                <Label htmlFor="type">Type *</Label>
+                <Label htmlFor="type">Định dạng *</Label>
                 <Select value={uploadForm.watch('type')} onValueChange={(v) => uploadForm.setValue('type', v as UploadFormData['type'])}>
-                  <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Chọn định dạng" /></SelectTrigger>
                   <SelectContent>
                     {['PDF', 'DOC', 'DOCX', 'XLS', 'XLSX', 'PPT', 'PPTX', 'TXT', 'JPG', 'JPEG', 'PNG', 'ZIP', 'OTHER'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="confidentiality">Confidentiality</Label>
+                <Label htmlFor="confidentiality">Mức độ mật</Label>
                 <Select value={uploadForm.watch('confidentiality')} onValueChange={(v) => uploadForm.setValue('confidentiality', v as UploadFormData['confidentiality'])}>
-                  <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Chọn mức độ" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PUBLIC">Public</SelectItem>
-                    <SelectItem value="INTERNAL">Internal</SelectItem>
-                    <SelectItem value="CONFIDENTIAL">Confidential</SelectItem>
-                    <SelectItem value="RESTRICTED">Restricted</SelectItem>
+                    <SelectItem value="PUBLIC">Công khai</SelectItem>
+                    <SelectItem value="INTERNAL">Nội bộ</SelectItem>
+                    <SelectItem value="CONFIDENTIAL">Mật</SelectItem>
+                    <SelectItem value="RESTRICTED">Tuyệt mật</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="categoryId">Category</Label>
+                <Label htmlFor="categoryId">Lĩnh vực</Label>
                 <Select value={uploadForm.watch('categoryId') || 'none'} onValueChange={(v) => uploadForm.setValue('categoryId', v === 'none' ? undefined : v)}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Chọn lĩnh vực" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="none">Không</SelectItem>
 {categoriesData?.data.categories.map((c: { id: string; name: string; color: string }) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div>
-              <Label htmlFor="file">File *</Label>
+              <Label htmlFor="file">Tệp *</Label>
               <Input id="file" type="file" onChange={handleFileChange} disabled={uploadMutation.isPending} />
-              {selectedFile && <p className="text-sm text-muted-foreground mt-1">Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</p>}
+              {selectedFile && <p className="text-sm text-muted-foreground mt-1">Đã chọn: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</p>}
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowUploadDialog(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setShowUploadDialog(false)}>Hủy</Button>
               <Button type="submit" disabled={uploadMutation.isPending}>
-                {uploadMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Upload'}
+                {uploadMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Tải lên'}
               </Button>
             </DialogFooter>
           </form>
@@ -610,23 +610,23 @@ export function DocumentsPage() {
       <Dialog open={showVersionDialog.open} onOpenChange={(open) => setShowVersionDialog({ ...showVersionDialog, open })}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Create New Version</DialogTitle>
-            <DialogDescription>Upload a new version of the document</DialogDescription>
+            <DialogTitle>Tạo phiên bản mới</DialogTitle>
+            <DialogDescription>Tải lên phiên bản mới của văn bản</DialogDescription>
           </DialogHeader>
           <form onSubmit={versionForm.handleSubmit(onVersionSubmit)} className="space-y-4">
             <div>
-              <Label htmlFor="changeNotes">Change Notes</Label>
-              <Textarea {...versionForm.register('changeNotes')} id="changeNotes" placeholder="What changed in this version?" rows={3} />
+              <Label htmlFor="changeNotes">Ghi chú thay đổi</Label>
+              <Textarea {...versionForm.register('changeNotes')} id="changeNotes" placeholder="Phiên bản này thay đổi gì?" rows={3} />
             </div>
             <div>
-              <Label htmlFor="version-file">File *</Label>
+              <Label htmlFor="version-file">Tệp *</Label>
               <Input id="version-file" type="file" onChange={handleVersionFileChange} disabled={versionMutation.isPending} />
-              {versionFile && <p className="text-sm text-muted-foreground mt-1">Selected: {versionFile.name}</p>}
+              {versionFile && <p className="text-sm text-muted-foreground mt-1">Đã chọn: {versionFile.name}</p>}
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowVersionDialog({ open: false, documentId: '' })}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setShowVersionDialog({ open: false, documentId: '' })}>Hủy</Button>
               <Button type="submit" disabled={versionMutation.isPending}>
-                {versionMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Create Version'}
+                {versionMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Tạo phiên bản'}
               </Button>
             </DialogFooter>
           </form>

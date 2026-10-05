@@ -2,7 +2,7 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { LayoutDashboard, FileText, CheckSquare, Calendar, FileQuestion, Users, Settings, Bell, LogOut, User, Menu, X, ChevronDown, Building2, Shield, Database } from 'lucide-react'
+import { LayoutDashboard, FileText, CheckSquare, Calendar, FileQuestion, Users, Settings, Bell, LogOut, User, Menu, X } from 'lucide-react'
 import { useAuth } from '@/features/auth/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 import { getInitials } from '@/lib/utils'
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
+  { name: 'Tổng quan', href: '/dashboard', icon: LayoutDashboard, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
   { name: 'Văn bản', href: '/documents', icon: FileText, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
   { name: 'Nhiệm vụ', href: '/tasks', icon: CheckSquare, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
   { name: 'Lịch công tác', href: '/calendar', icon: Calendar, roles: ['USER', 'ADMINISTRATOR', 'DEVELOPER'] },
@@ -65,15 +65,33 @@ export function MainLayout() {
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex h-16 items-center justify-between border-b border-border px-4">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-8 w-8 text-primary" />
-              <span className="font-semibold text-lg">E-Office</span>
+          <div className="flex items-center gap-2 border-b border-border bg-gradient-to-r from-red-800 to-red-600 px-3 py-2">
+            <img
+              src="/logos/logo-doan.png"
+              alt="Đoàn TNCS Hồ Chí Minh"
+              className="h-11 w-11 flex-shrink-0 object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+            <img
+              src="/logos/logo-hoi.png"
+              alt="Hội Liên hiệp Thanh niên Việt Nam"
+              className="h-11 w-11 flex-shrink-0 object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+            <img
+              src="/logos/logo-doi.png"
+              alt="Đội TNTP Hồ Chí Minh"
+              className="h-11 w-11 flex-shrink-0 object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-bold leading-tight text-white">Hệ thống tác nghiệp</p>
+              <p className="truncate text-xs font-medium leading-tight text-yellow-300">Đoàn - Hội - Đội</p>
             </div>
             <button
-              className="lg:hidden p-2 rounded-md hover:bg-accent"
+              className="lg:hidden p-2 rounded-md text-white hover:bg-white/10"
               onClick={() => setSidebarOpen(false)}
-              aria-label="Close sidebar"
+              aria-label="Đóng menu"
             >
               <X className="h-5 w-5" />
             </button>
@@ -104,7 +122,7 @@ export function MainLayout() {
           {/* Footer */}
           <div className="border-t border-border p-4">
             <div className="text-xs text-muted-foreground text-center">
-              E-Office v1.0.0
+              Đoàn Tân Hưng • v1.0.0
             </div>
           </div>
         </div>
@@ -132,9 +150,9 @@ export function MainLayout() {
               </span>
               <input
                 type="search"
-                placeholder="Search documents, tasks, reports..."
+                placeholder="Tìm kiếm văn bản, nhiệm vụ, báo cáo..."
                 className="h-9 w-full rounded-md border border-input bg-background pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-ring"
-                aria-label="Global search"
+                aria-label="Tìm kiếm"
               />
             </div>
           </div>
@@ -163,12 +181,16 @@ export function MainLayout() {
                 <div className="px-2 py-1">
                   <p className="text-sm font-medium">{user?.fullName}</p>
                   <p className="text-xs text-muted-foreground">{user?.username}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{user?.role?.toLowerCase()}</p>
+                  <p className="text-xs text-muted-foreground">{user?.role === 'DEVELOPER' ? 'Lập trình viên' : user?.role === 'ADMINISTRATOR' ? 'Quản trị viên' : 'Người dùng'}</p>
                 </div>
                 <Separator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  Hồ sơ cá nhân
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logout()}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  Log out
+                  Đăng xuất
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

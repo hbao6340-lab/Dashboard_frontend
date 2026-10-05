@@ -33,9 +33,9 @@ export function useCreateTask() {
     mutationFn: (data: any) => taskApi.createTask(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
-      toast.success('Task created successfully')
+      toast.success('Đã tạo nhiệm vụ')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to create task'),
+    onError: (error: any) => toast.error(error.message || 'Tạo nhiệm vụ thất bại'),
   })
 }
 
@@ -46,9 +46,9 @@ export function useUpdateTask() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) })
-      toast.success('Task updated successfully')
+      toast.success('Đã cập nhật nhiệm vụ')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to update task'),
+    onError: (error: any) => toast.error(error.message || 'Cập nhật nhiệm vụ thất bại'),
   })
 }
 
@@ -58,9 +58,9 @@ export function useDeleteTask() {
     mutationFn: (id: string) => taskApi.deleteTask(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
-      toast.success('Task cancelled successfully')
+      toast.success('Đã hủy nhiệm vụ')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to cancel task'),
+    onError: (error: any) => toast.error(error.message || 'Hủy nhiệm vụ thất bại'),
   })
 }
 
@@ -70,9 +70,9 @@ export function useAssignTask() {
     mutationFn: ({ id, data }: { id: string; data: { userId: string; isPrimary?: boolean } }) => taskApi.assignTask(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) })
-      toast.success('Task assigned successfully')
+      toast.success('Đã giao nhiệm vụ')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to assign task'),
+    onError: (error: any) => toast.error(error.message || 'Giao nhiệm vụ thất bại'),
   })
 }
 
@@ -83,9 +83,9 @@ export function useUpdateProgress() {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) })
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
-      toast.success('Progress updated successfully')
+      toast.success('Đã cập nhật tiến độ')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to update progress'),
+    onError: (error: any) => toast.error(error.message || 'Cập nhật tiến độ thất bại'),
   })
 }
 
@@ -95,8 +95,8 @@ export function useAddComment() {
     mutationFn: ({ id, content }: { id: string; content: string }) => taskApi.addComment(id, content),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(id) })
-      toast.success('Comment added successfully')
+      toast.success('Đã thêm bình luận')
     },
-    onError: (error: any) => toast.error(error.message || 'Failed to add comment'),
+    onError: (error: any) => toast.error(error.message || 'Thêm bình luận thất bại'),
   })
 }

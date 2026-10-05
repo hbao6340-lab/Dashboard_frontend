@@ -14,7 +14,7 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { userApi } from '@/services/userApi'
 import { toast } from 'sonner'
 
-const ROLE_LABELS: Record<string, string> = { DEVELOPER: 'Developer', ADMINISTRATOR: 'Quản trị', USER: 'Người dùng' }
+const ROLE_LABELS: Record<string, string> = { DEVELOPER: 'Lập trình viên', ADMINISTRATOR: 'Quản trị', USER: 'Người dùng' }
 
 export function UsersPage() {
   const { user: currentUser } = useAuth()
@@ -71,7 +71,7 @@ export function UsersPage() {
   })
 
   if (!canManage) {
-    return <div className="text-center text-muted-foreground py-12">Chỉ quản trị viên và developer mới được quản lý người dùng.</div>
+    return <div className="text-center text-muted-foreground py-12">Chỉ quản trị viên và lập trình viên mới được quản lý người dùng.</div>
   }
 
   const users = (data as any)?.data?.users ?? []
@@ -82,7 +82,7 @@ export function UsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Người dùng</h1>
-          <p className="text-muted-foreground">Tạo mới và quản lý người dùng (quản trị / developer)</p>
+          <p className="text-muted-foreground">Tạo mới và quản lý người dùng (quản trị / lập trình viên)</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>
           <Plus className="mr-2 h-4 w-4" /> Thêm người dùng
@@ -170,7 +170,7 @@ export function UsersPage() {
                   <SelectContent>
                     <SelectItem value="USER">Người dùng</SelectItem>
                     <SelectItem value="ADMINISTRATOR">Quản trị</SelectItem>
-                    {currentUser?.role === 'DEVELOPER' && <SelectItem value="DEVELOPER">Developer</SelectItem>}
+                    {currentUser?.role === 'DEVELOPER' && <SelectItem value="DEVELOPER">Lập trình viên</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
@@ -205,7 +205,7 @@ export function UsersPage() {
                   <SelectContent>
                     <SelectItem value="USER">Người dùng</SelectItem>
                     <SelectItem value="ADMINISTRATOR">Quản trị</SelectItem>
-                    {currentUser?.role === 'DEVELOPER' && <SelectItem value="DEVELOPER">Developer</SelectItem>}
+                    {currentUser?.role === 'DEVELOPER' && <SelectItem value="DEVELOPER">Lập trình viên</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
