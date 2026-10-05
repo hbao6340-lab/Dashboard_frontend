@@ -89,10 +89,10 @@ export function MainLayout() {
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />
             </div>
-            <div className="mt-2 text-center">
-              <p className="font-times text-sm font-bold leading-snug text-white">HỆ THỐNG TÁC NGHIỆP</p>
-              <p className="font-times text-xs font-semibold tracking-[0.2em] text-white">ĐOÀN - HỘI - ĐỘI</p>
-              <p className="font-times mt-1 text-sm font-bold tracking-[0.2em] text-white">PHƯỜNG TÂN HƯNG</p>
+            <div className="mt-2 space-y-1.5 text-center">
+              <p className="font-times text-sm font-bold leading-relaxed tracking-[0.12em] text-white">HỆ THỐNG TÁC NGHIỆP</p>
+              <p className="font-times text-xs font-semibold tracking-[0.15em] text-white">ĐOÀN - HỘI - ĐỘI</p>
+              <p className="font-times text-sm font-bold tracking-[0.15em] text-white">PHƯỜNG TÂN HƯNG</p>
             </div>
             <button
               className="absolute right-2 top-2 lg:hidden p-2 rounded-md text-white hover:bg-white/10"
