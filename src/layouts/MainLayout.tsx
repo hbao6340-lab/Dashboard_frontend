@@ -92,6 +92,7 @@ export function MainLayout() {
             <div className="mt-2 text-center">
               <p className="font-times text-sm font-bold leading-snug text-white">HỆ THỐNG TÁC NGHIỆP</p>
               <p className="font-times text-xs font-semibold tracking-[0.2em] text-white">ĐOÀN - HỘI - ĐỘI</p>
+              <p className="font-times mt-1 text-[11px] font-medium tracking-[0.25em] text-white">PHƯỜNG TÂN HƯNG</p>
             </div>
             <button
               className="absolute right-2 top-2 lg:hidden p-2 rounded-md text-white hover:bg-white/10"
