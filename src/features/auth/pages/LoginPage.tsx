@@ -75,9 +75,9 @@ export function LoginPage() {
       <Card className="relative w-full max-w-md overflow-hidden border-t-4 border-t-yellow-400 shadow-2xl">
         <CardHeader className="text-center">
           <BrandLogos size="lg" className="mb-4" />
-          <CardTitle className="font-times text-2xl text-[#141a9e]">KHÔNG GIAN ĐOÀN TÂN HƯNG</CardTitle>
+          <CardTitle className="font-times text-2xl text-[#141a9e]">HỆ THỐNG TÁC NGHIỆP ĐOÀN - HỘI - ĐỘI</CardTitle>
           <CardDescription className="font-times font-medium text-[#2b31c4]">
-            HỆ THỐNG TÁC NGHIỆP ĐOÀN - HỘI - ĐỘI
+            PHƯỜNG TÂN HƯNG
           </CardDescription>
         </CardHeader>
 
