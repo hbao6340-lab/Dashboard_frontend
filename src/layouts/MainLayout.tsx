@@ -71,21 +71,21 @@ export function MainLayout() {
                 src="/logos/logo-doan.png"
                 alt="Đoàn TNCS Hồ Chí Minh"
                 title="Đoàn TNCS Hồ Chí Minh"
-                className="h-12 w-12 rounded-full bg-white object-contain p-0.5 shadow ring-2 ring-yellow-300/70"
+                className="h-12 w-12 object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />
               <img
                 src="/logos/logo-hoi.png"
                 alt="Hội Liên hiệp Thanh niên Việt Nam"
                 title="Hội Liên hiệp Thanh niên Việt Nam"
-                className="h-12 w-12 rounded-full bg-white object-contain p-0.5 shadow ring-2 ring-yellow-300/70"
+                className="h-12 w-12 object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />
               <img
                 src="/logos/logo-doi.png"
                 alt="Đội TNTP Hồ Chí Minh"
                 title="Đội TNTP Hồ Chí Minh"
-                className="h-12 w-12 rounded-full bg-white object-contain p-0.5 shadow ring-2 ring-yellow-300/70"
+                className="h-12 w-12 object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />
             </div>
