@@ -79,7 +79,7 @@ export function LoginPage() {
             <span className="block">HỆ THỐNG TÁC NGHIỆP</span>
             <span className="block">ĐOÀN - HỘI - ĐỘI</span>
           </CardTitle>
-          <CardDescription className="font-times text-2xl font-bold leading-snug text-[#2b31c4]">
+          <CardDescription className="font-times !mt-1 text-2xl font-bold leading-snug text-[#2b31c4]">
             PHƯỜNG TÂN HƯNG
           </CardDescription>
         </CardHeader>
