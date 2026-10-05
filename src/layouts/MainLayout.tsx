@@ -65,7 +65,7 @@ export function MainLayout() {
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex items-center gap-2 border-b border-border bg-gradient-to-r from-red-800 to-red-600 px-3 py-2">
+          <div className="flex items-center gap-2 border-b border-border bg-gradient-to-r from-[#0e12a0] to-[#1920be] px-3 py-2">
             <img
               src="/logos/logo-doan.png"
               alt="Đoàn TNCS Hồ Chí Minh"

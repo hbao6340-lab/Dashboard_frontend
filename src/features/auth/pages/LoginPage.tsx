@@ -65,7 +65,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-red-950 via-red-800 to-red-600 px-4 py-8">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#0a0d45] via-[#1920be] to-[#4c54e2] px-4 py-8">
       {/* Decorative gold stars */}
       <GoldStar className="pointer-events-none absolute -left-10 -top-10 h-64 w-64 text-yellow-400/10" />
       <GoldStar className="pointer-events-none absolute -bottom-16 -right-12 h-80 w-80 text-yellow-400/10" />
@@ -75,8 +75,8 @@ export function LoginPage() {
       <Card className="relative w-full max-w-md overflow-hidden border-t-4 border-t-yellow-400 shadow-2xl">
         <CardHeader className="text-center">
           <BrandLogos size="lg" className="mb-4" />
-          <CardTitle className="text-2xl text-red-800">KHÔNG GIAN ĐOÀN TÂN HƯNG</CardTitle>
-          <CardDescription className="font-medium text-red-700">
+          <CardTitle className="text-2xl text-[#141a9e]">KHÔNG GIAN ĐOÀN TÂN HƯNG</CardTitle>
+          <CardDescription className="font-medium text-[#2b31c4]">
             HỆ THỐNG TÁC NGHIỆP ĐOÀN - HỘI - ĐỘI
           </CardDescription>
         </CardHeader>

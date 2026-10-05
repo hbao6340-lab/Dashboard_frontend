@@ -11,20 +11,20 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    /* Đoàn TNCS Hồ Chí Minh theme: flag red primary, gold accent */
-    --primary: 0 72% 45%;
-    --primary-foreground: 48 100% 98%;
-    --secondary: 48 60% 95%;
-    --secondary-foreground: 0 60% 28%;
-    --muted: 48 40% 96%;
+    /* Blue theme (#1920be primary) */
+    --primary: 237 77% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 237 60% 95%;
+    --secondary-foreground: 237 60% 28%;
+    --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 48 95% 88%;
-    --accent-foreground: 0 60% 28%;
+    --accent: 237 85% 90%;
+    --accent-foreground: 237 60% 28%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 0 72% 45%;
+    --ring: 237 77% 42%;
     --radius: 0.5rem;
   }
 
