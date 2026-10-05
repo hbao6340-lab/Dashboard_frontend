@@ -69,4 +69,7 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  .font-times {
+    font-family: 'Times New Roman', Times, serif;
+  }
 }
