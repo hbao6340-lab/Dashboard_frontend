@@ -64,32 +64,37 @@ export function MainLayout() {
         aria-label="Main navigation"
       >
         <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex items-center gap-2 border-b border-border bg-gradient-to-r from-[#0e12a0] to-[#1920be] px-3 py-2">
-            <img
-              src="/logos/logo-doan.png"
-              alt="Đoàn TNCS Hồ Chí Minh"
-              className="h-11 w-11 flex-shrink-0 object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
-            <img
-              src="/logos/logo-hoi.png"
-              alt="Hội Liên hiệp Thanh niên Việt Nam"
-              className="h-11 w-11 flex-shrink-0 object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
-            <img
-              src="/logos/logo-doi.png"
-              alt="Đội TNTP Hồ Chí Minh"
-              className="h-11 w-11 flex-shrink-0 object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-bold leading-tight text-white">Hệ thống tác nghiệp</p>
-              <p className="truncate text-xs font-medium leading-tight text-yellow-300">Đoàn - Hội - Đội</p>
+          {/* Logo banner */}
+          <div className="relative border-b border-border bg-gradient-to-b from-[#0e12a0] to-[#1920be] px-3 pb-3 pt-4">
+            <div className="flex items-center justify-center gap-2">
+              <img
+                src="/logos/logo-doan.png"
+                alt="Đoàn TNCS Hồ Chí Minh"
+                title="Đoàn TNCS Hồ Chí Minh"
+                className="h-12 w-12 rounded-full bg-white object-contain p-0.5 shadow ring-2 ring-yellow-300/70"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+              <img
+                src="/logos/logo-hoi.png"
+                alt="Hội Liên hiệp Thanh niên Việt Nam"
+                title="Hội Liên hiệp Thanh niên Việt Nam"
+                className="h-12 w-12 rounded-full bg-white object-contain p-0.5 shadow ring-2 ring-yellow-300/70"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+              <img
+                src="/logos/logo-doi.png"
+                alt="Đội TNTP Hồ Chí Minh"
+                title="Đội TNTP Hồ Chí Minh"
+                className="h-12 w-12 rounded-full bg-white object-contain p-0.5 shadow ring-2 ring-yellow-300/70"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            </div>
+            <div className="mt-2 text-center">
+              <p className="text-sm font-bold leading-snug text-white">Hệ thống tác nghiệp</p>
+              <p className="text-xs font-semibold tracking-[0.2em] text-yellow-300">ĐOÀN - HỘI - ĐỘI</p>
             </div>
             <button
-              className="lg:hidden p-2 rounded-md text-white hover:bg-white/10"
+              className="absolute right-2 top-2 lg:hidden p-2 rounded-md text-white hover:bg-white/10"
               onClick={() => setSidebarOpen(false)}
               aria-label="Đóng menu"
             >
