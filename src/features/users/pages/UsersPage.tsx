@@ -25,22 +25,22 @@ export function UsersPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<any | null>(null)
   const [resetting, setResetting] = useState<any | null>(null)
-  const [form, setForm] = useState({ username: '', email: '', password: '', fullName: '', role: 'USER', departmentId: '', position: '', phone: '' })
-  const [editForm, setEditForm] = useState({ fullName: '', email: '', departmentId: '', position: '', phone: '', role: '', status: '' })
+  const [form, setForm] = useState({ username: '', email: '', password: '', fullName: '', role: 'USER', departmentName: '', position: '', phone: '' })
+  const [editForm, setEditForm] = useState({ fullName: '', email: '', departmentName: '', position: '', phone: '', role: '', status: '' })
   const [newPassword, setNewPassword] = useState('')
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['users', search, page],
     queryFn: () => userApi.getUsers({ search, page, limit: 20 }),
   })
-  const { data: deptData } = useQuery({ queryKey: ['departments'], queryFn: () => userApi.getDepartments() })
-  const departments: Array<{ id: string; name: string }> = (deptData as any)?.data?.departments ?? []
-
   const invalidate = () => { queryClient.invalidateQueries({ queryKey: ['users'] }); refetch() }
 
   const createMutation = useMutation({
-    mutationFn: () => userApi.createUser({ ...form, departmentId: form.departmentId && form.departmentId !== 'none' ? form.departmentId : undefined }),
-    onSuccess: () => { toast.success('Đã tạo người dùng'); setShowCreate(false); setForm({ username: '', email: '', password: '', fullName: '', role: 'USER', departmentId: '', position: '', phone: '' }); invalidate() },
+    mutationFn: () => {
+      const { departmentName, ...rest } = form
+      return userApi.createUser({ ...rest, departmentName: departmentName.trim() || undefined })
+    },
+    onSuccess: () => { toast.success('Đã tạo người dùng'); setShowCreate(false); setForm({ username: '', email: '', password: '', fullName: '', role: 'USER', departmentName: '', position: '', phone: '' }); invalidate() },
     onError: (e: any) => toast.error(e.message || 'Tạo người dùng thất bại'),
   })
 
@@ -49,7 +49,7 @@ export function UsersPage() {
       const payload: any = {}
       if (editForm.fullName) payload.fullName = editForm.fullName
       if (editForm.email) payload.email = editForm.email
-      payload.departmentId = editForm.departmentId && editForm.departmentId !== 'none' ? editForm.departmentId : null
+      payload.departmentName = editForm.departmentName
       if (editForm.position) payload.position = editForm.position
       if (editForm.phone) payload.phone = editForm.phone
       if (editForm.role) payload.role = editForm.role
@@ -128,7 +128,7 @@ export function UsersPage() {
                       <TableCell><Badge className={u.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>{u.status}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" title="Sửa" onClick={() => { setEditing(u); setEditForm({ fullName: u.fullName, email: u.email, departmentId: u.departmentId || u.department?.id || 'none', position: u.position || '', phone: u.phone || '', role: u.role, status: u.status }) }}>
+                          <Button variant="ghost" size="icon" title="Sửa" onClick={() => { setEditing(u); setEditForm({ fullName: u.fullName, email: u.email, departmentName: u.department?.name || '', position: u.position || '', phone: u.phone || '', role: u.role, status: u.status }) }}>
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" title="Đặt lại mật khẩu" onClick={() => setResetting(u)}>
@@ -182,13 +182,7 @@ export function UsersPage() {
             </div>
             <div>
               <Label>Đơn vị</Label>
-              <Select value={form.departmentId || 'none'} onValueChange={(v) => setForm({ ...form, departmentId: v })}>
-                <SelectTrigger><SelectValue placeholder="Chọn đơn vị" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Không</SelectItem>
-                  {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Input value={form.departmentName} onChange={(e) => setForm({ ...form, departmentName: e.target.value })} placeholder="Nhập tên đơn vị, vd: Đoàn Tân Hưng" />
             </div>
             <div><Label>Số điện thoại</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
           </div>
@@ -208,13 +202,7 @@ export function UsersPage() {
             <div><Label>Email</Label><Input value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></div>
             <div>
               <Label>Đơn vị</Label>
-              <Select value={editForm.departmentId || 'none'} onValueChange={(v) => setEditForm({ ...editForm, departmentId: v })}>
-                <SelectTrigger><SelectValue placeholder="Chọn đơn vị" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Không</SelectItem>
-                  {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Input value={editForm.departmentName} onChange={(e) => setEditForm({ ...editForm, departmentName: e.target.value })} placeholder="Nhập tên đơn vị, để trống để gỡ" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Chức vụ</Label><Input value={editForm.position} onChange={(e) => setEditForm({ ...editForm, position: e.target.value })} /></div>

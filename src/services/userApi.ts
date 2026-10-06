@@ -21,7 +21,7 @@ export const userApi = {
     return api.get<UsersResponse>(`/users?${searchParams.toString()}`)
   },
   getUser: (id: string) => api.get<{ success: boolean; data: { user: User } }>(`/users/${id}`),
-  createUser: (data: { username: string; email: string; password: string; fullName: string; role?: string; departmentId?: string; position?: string; phone?: string }) =>
+  createUser: (data: { username: string; email: string; password: string; fullName: string; role?: string; departmentId?: string; departmentName?: string; position?: string; phone?: string }) =>
     api.post<{ success: boolean; data: { user: User } }>('/users', data),
   updateUser: (id: string, data: Partial<User>) =>
     api.patch<{ success: boolean; data: { user: User } }>(`/users/${id}`, data),

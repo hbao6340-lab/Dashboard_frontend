@@ -1,5 +1,5 @@
 // Profile Page — account info + change password
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2, KeyRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -22,8 +22,33 @@ export function ProfilePage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [email, setEmail] = useState<string | null>(null)
+  const [profile, setProfile] = useState({ departmentName: '', position: '', phone: '' })
+
+  // Sync editable fields when account data loads
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        departmentName: user.department?.name ?? '',
+        position: user.position ?? '',
+        phone: user.phone ?? '',
+      })
+    }
+  }, [user?.id])
 
   const emailValue = email ?? user?.email ?? ''
+
+  const profileMutation = useMutation({
+    mutationFn: () => userApi.updateUser(user!.id, {
+      departmentName: profile.departmentName,
+      position: profile.position || undefined,
+      phone: profile.phone || undefined,
+    } as any),
+    onSuccess: () => {
+      toast.success('Đã cập nhật thông tin')
+      refreshUser()
+    },
+    onError: (e: any) => toast.error(e.message || 'Cập nhật thất bại'),
+  })
 
   const emailMutation = useMutation({
     mutationFn: () => userApi.updateUser(user!.id, { email: emailValue }),
@@ -85,25 +110,32 @@ export function ProfilePage() {
                 <Badge variant="outline" className="mt-1">{ROLE_LABELS[user.role] ?? user.role}</Badge>
               </div>
             </div>
-            <dl className="space-y-2 text-sm">
-              <div className="flex items-center justify-between gap-2">
-                <dt className="text-muted-foreground">Email</dt>
-                <dd className="flex items-center gap-2">
-                  <Input
-                    type="email"
-                    value={emailValue}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-8 w-56 text-right"
-                  />
+            <div className="space-y-3 text-sm">
+              <div>
+                <Label>Email</Label>
+                <div className="flex items-center gap-2">
+                  <Input type="email" value={emailValue} onChange={(e) => setEmail(e.target.value)} />
                   <Button size="sm" variant="outline" onClick={handleEmailSave} disabled={emailMutation.isPending || emailValue === user.email}>
                     {emailMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Lưu'}
                   </Button>
-                </dd>
+                </div>
               </div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Đơn vị</dt><dd className="font-medium">{user.department?.name ?? '—'}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Chức vụ</dt><dd className="font-medium">{user.position || '—'}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Số điện thoại</dt><dd className="font-medium">{user.phone || '—'}</dd></div>
-            </dl>
+              <div>
+                <Label>Đơn vị</Label>
+                <Input value={profile.departmentName} onChange={(e) => setProfile({ ...profile, departmentName: e.target.value })} placeholder="Nhập tên đơn vị" />
+              </div>
+              <div>
+                <Label>Chức vụ</Label>
+                <Input value={profile.position} onChange={(e) => setProfile({ ...profile, position: e.target.value })} placeholder="Nhập chức vụ" />
+              </div>
+              <div>
+                <Label>Số điện thoại</Label>
+                <Input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} placeholder="Nhập số điện thoại" />
+              </div>
+              <Button size="sm" onClick={() => profileMutation.mutate()} disabled={profileMutation.isPending}>
+                {profileMutation.isPending && <Loader2 className="mr-2 h-3 w-3 animate-spin" />} Lưu thông tin
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
