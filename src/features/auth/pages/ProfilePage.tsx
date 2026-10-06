@@ -10,16 +10,36 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/features/auth/AuthContext'
 import { authApi } from '@/services/api'
+import { userApi } from '@/services/userApi'
 import { getInitials } from '@/lib/utils'
 import { toast } from 'sonner'
 
-const ROLE_LABELS: Record<string, string> = { DEVELOPER: 'Developer', ADMINISTRATOR: 'Quản trị', USER: 'Người dùng' }
+const ROLE_LABELS: Record<string, string> = { DEVELOPER: 'Lập trình viên', ADMINISTRATOR: 'Quản trị', USER: 'Người dùng' }
 
 export function ProfilePage() {
   const { user, refreshUser } = useAuth()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [email, setEmail] = useState<string | null>(null)
+
+  const emailValue = email ?? user?.email ?? ''
+
+  const emailMutation = useMutation({
+    mutationFn: () => userApi.updateUser(user!.id, { email: emailValue }),
+    onSuccess: () => {
+      toast.success('Đã cập nhật email')
+      setEmail(null)
+      refreshUser()
+    },
+    onError: (e: any) => toast.error(e.message || 'Cập nhật email thất bại'),
+  })
+
+  const handleEmailSave = () => {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailValue)) { toast.error('Email không hợp lệ'); return }
+    if (emailValue === user?.email) { toast.error('Email không thay đổi'); return }
+    emailMutation.mutate()
+  }
 
   const changeMutation = useMutation({
     mutationFn: () => authApi.changePassword(currentPassword, newPassword),
@@ -66,7 +86,20 @@ export function ProfilePage() {
               </div>
             </div>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-muted-foreground">Email</dt><dd className="font-medium">{user.email}</dd></div>
+              <div className="flex items-center justify-between gap-2">
+                <dt className="text-muted-foreground">Email</dt>
+                <dd className="flex items-center gap-2">
+                  <Input
+                    type="email"
+                    value={emailValue}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-8 w-56 text-right"
+                  />
+                  <Button size="sm" variant="outline" onClick={handleEmailSave} disabled={emailMutation.isPending || emailValue === user.email}>
+                    {emailMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Lưu'}
+                  </Button>
+                </dd>
+              </div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Đơn vị</dt><dd className="font-medium">{user.department?.name ?? '—'}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Chức vụ</dt><dd className="font-medium">{user.position || '—'}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Số điện thoại</dt><dd className="font-medium">{user.phone || '—'}</dd></div>
