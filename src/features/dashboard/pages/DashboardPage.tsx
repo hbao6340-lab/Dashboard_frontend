@@ -7,6 +7,7 @@ import { Users, FileText, CheckSquare, AlertTriangle, Clock, TrendingUp, Loader2
 import { cn, formatDate } from '@/lib/utils'
 import { dashboardApi } from '@/services/dashboardApi'
 import { documentApi } from '@/services/documentApi'
+import { useCategories } from '@/features/documents/hooks/useDocuments'
 import { WORK_CATEGORIES, TASK_STATUSES, priorityLabel } from '@/lib/constants'
 import {
   ResponsiveContainer,
@@ -35,18 +36,26 @@ export function DashboardPage() {
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const { data, isLoading, isError } = useQuery({ queryKey: ['dashboard-stats'], queryFn: () => dashboardApi.getStats() })
 
-  // Documents filtered by selected work tag (via category name match on live categories)
+  // Tag chips come from the live category list (same source as the upload
+  // form), so a tag always resolves to the documents filed under it.
+  const { data: categoriesData } = useCategories()
+  const liveCategories: Array<{ id: string; name: string; color: string }> =
+    (categoriesData as any)?.data?.categories ?? []
+  const chips = liveCategories.length > 0
+    ? liveCategories.map((c) => ({ id: c.id as string | null, name: c.name, color: c.color }))
+    : WORK_CATEGORIES.map((t) => ({ id: null as string | null, name: t.name, color: t.color }))
+
+  // Documents filtered by selected tag (resolved to category id — no fragile fetch)
+  const activeCategoryId = activeTag
+    ? liveCategories.find((c) => c.name === activeTag)?.id ?? null
+    : null
   const { data: tagDocs } = useQuery({
-    queryKey: ['dashboard-tag-docs', activeTag],
+    queryKey: ['dashboard-tag-docs', activeCategoryId],
     queryFn: async () => {
-      const cats: any = await fetch('/api/categories', { credentials: 'include' }).then((r) => r.json()).catch(() => null)
-      const list = cats?.data?.categories ?? []
-      const match = list.find((c: any) => c.name === activeTag)
-      if (!match) return { documents: [] }
-      const res = await documentApi.getDocuments({ categoryId: match.id, limit: 10 })
+      const res = await documentApi.getDocuments({ categoryId: activeCategoryId!, limit: 10 })
       return (res as any).data
     },
-    enabled: !!activeTag,
+    enabled: !!activeCategoryId,
   })
 
   const { data: recentDocs } = useQuery({
@@ -108,7 +117,7 @@ export function DashboardPage() {
             >
               Tất cả
             </Badge>
-            {WORK_CATEGORIES.map((t) => (
+            {chips.map((t) => (
               <Badge
                 key={t.name}
                 className="cursor-pointer"

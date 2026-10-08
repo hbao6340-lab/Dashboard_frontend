@@ -16,7 +16,7 @@ import { FilePreviewDialog } from '@/components/FilePreviewDialog'
 import { REPORT_STATUSES } from '@/lib/constants'
 import { toast } from 'sonner'
 
-const TYPE_LABELS: Record<string, string> = { TASK_SPECIFIC: 'Theo nhiệm vụ', MONTHLY: 'Tháng', GENERAL: 'Chung / Kiến nghị' }
+const TYPE_LABELS: Record<string, string> = { TASK_SPECIFIC: 'Theo nhiệm vụ', MONTHLY: 'Tháng', GENERAL: 'Chung' }
 
 export function ReportsPage() {
   const { user } = useAuth()
@@ -133,7 +133,7 @@ export function ReportsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Báo cáo & Kiến nghị</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Báo cáo</h1>
           <p className="text-muted-foreground">Gửi báo cáo, phản ánh vấn đề lên cấp trên kèm tệp đính kèm</p>
         </div>
         <Button onClick={() => setShowCreate(true)}><Plus className="mr-2 h-4 w-4" /> Tạo báo cáo</Button>
@@ -176,7 +176,7 @@ export function ReportsPage() {
       {/* Create — short & brief */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Tạo báo cáo / kiến nghị</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Tạo báo cáo</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Tiêu đề *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Báo cáo tháng 10..." /></div>
             <div>
@@ -188,7 +188,7 @@ export function ReportsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Nội dung</Label><Textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Tóm tắt nội dung, vấn đề, kiến nghị..." rows={4} /></div>
+            <div><Label>Nội dung</Label><Textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Tóm tắt nội dung và vấn đề cần báo cáo..." rows={4} /></div>
             <div>
               <Label>Đính kèm tệp (pdf, word...)</Label>
               <Input
