@@ -6,6 +6,7 @@ export const WORK_CATEGORIES = [
   { name: 'Chuyển đổi số trong công tác Đoàn', color: '#06B6D4' },
   { name: 'Đội & Thiếu nhi', color: '#EC4899' },
   { name: 'Hội Liên hiệp Thanh niên Việt Nam', color: '#10B981' },
+  { name: 'Thông Báo', color: '#EA580C' },
 ] as const
 
 // 3 priority levels: Thấp / Trung bình / Cao
