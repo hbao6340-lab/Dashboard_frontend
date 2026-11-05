@@ -127,6 +127,7 @@ export function DocumentsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkDialog, setBulkDialog] = useState<{ open: boolean; mode: 'assign' | 'assignAll' | 'archive' | 'category' }>({ open: false, mode: 'assign' })
   const [bulkAssignAll, setBulkAssignAll] = useState(false)
+  const [bulkAssignUserId, setBulkAssignUserId] = useState('')
   const [bulkCategoryId, setBulkCategoryId] = useState('')
   const [bulkDeadline, setBulkDeadline] = useState('')
   const [bulkPriority, setBulkPriority] = useState<'LOW' | 'NORMAL' | 'HIGH'>('NORMAL')
@@ -172,6 +173,51 @@ export function DocumentsPage() {
     },
     onError: (e: any) => toast.error(e.message || 'Thao tác hàng loạt thất bại'),
   })
+
+  const downloadMany = async () => {
+    const ids = Array.from(selectedIds)
+    for (const id of ids) {
+      try {
+        const doc = onPageDocs.find((d: DocumentRow) => d.id === id)
+        const blob = await documentApi.previewDocument(id)
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = doc?.originalName || `tai-xuong-${id}.dat`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 5000)
+      } catch {
+        /* skip failed file */
+      }
+    }
+    toast.success(`Đã tải ${ids.length} văn bản`)
+  }
+
+  const onBulkAssign = async () => {
+    if (selectedIds.size === 0) { toast.error('Chưa chọn văn bản nào'); return }
+    const ids = Array.from(selectedIds)
+    const isoDeadline = bulkDeadline ? new Date(bulkDeadline).toISOString() : undefined
+    try {
+      for (const id of ids) {
+        if (bulkAssignAll) {
+          await documentApi.assignAllDocument(id, { deadline: isoDeadline, priority: bulkPriority, notes: bulkNotes || undefined })
+        } else {
+          const data = { userId: bulkAssignUserId, deadline: isoDeadline, priority: bulkPriority, notes: bulkNotes || undefined }
+          if (!data.userId) { toast.error('Vui lòng chọn người thực hiện'); return }
+          await documentApi.assignDocument(id, data)
+        }
+      }
+      toast.success(`Đã giao việc cho ${ids.length} văn bản`)
+      clearSelection()
+      setBulkDialog({ open: false, mode: 'assign' })
+      setBulkAssignAll(false)
+      refetch()
+    } catch (e: any) {
+      toast.error(e.message || 'Giao việc thất bại')
+    }
+  }
 
   const { data: documentsData, isLoading, refetch } = useDocuments(searchParams)
   const { data: categoriesData } = useCategories()
@@ -610,6 +656,119 @@ export function DocumentsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Bulk actions bar — appears when documents are selected */}
+      {selectedIds.size > 0 && (
+        <Card className="sticky bottom-4 z-10 border-primary/30 shadow-lg">
+          <CardContent className="flex flex-wrap items-center gap-2 py-3">
+            <span className="text-sm font-medium">Đã chọn {selectedIds.size} văn bản</span>
+            <Button variant="ghost" size="sm" onClick={clearSelection}>Bỏ chọn</Button>
+            <div className="flex-1" />
+            <Button variant="outline" size="sm" onClick={downloadMany}>
+              <Download className="mr-1 h-4 w-4" /> Tải xuống
+            </Button>
+            {canUpload && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setBulkDialog({ open: true, mode: 'category' })}>
+                  <Edit className="mr-1 h-4 w-4" /> Đổi lĩnh vực
+                </Button>
+              </>
+            )}
+            {canAssign && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => { setBulkAssignAll(false); setBulkDialog({ open: true, mode: 'assign' }) }}>
+                  <Clock className="mr-1 h-4 w-4" /> Giao việc hàng loạt
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setBulkAssignAll(true); setBulkDialog({ open: true, mode: 'assignAll' }) }}>
+                  Giao cho tất cả
+                </Button>
+              </>
+            )}
+            {canUpload && (
+              <Button variant="outline" size="sm" className="text-destructive" onClick={() => setBulkDialog({ open: true, mode: 'archive' })}>
+                <Archive className="mr-1 h-4 w-4" /> Lưu trữ
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bulk Dialog */}
+      <Dialog open={bulkDialog.open} onOpenChange={(o) => setBulkDialog((p) => ({ ...p, open: o }))}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {bulkDialog.mode
+                ? { assign: `Giao việc (${selectedIds.size} văn bản)`, assignAll: `Giao cho tất cả (${selectedIds.size} văn bản)`, archive: `Lưu trữ ${selectedIds.size} văn bản?`, category: `Đổi lĩnh vực (${selectedIds.size} văn bản)` }[bulkDialog.mode]
+                : ''}
+            </DialogTitle>
+            <DialogDescription>
+              {bulkDialog.mode === 'archive' && 'Hành động này sẽ chuyển các văn bản đã chọn sang trạng thái Lưu trữ.'}
+              {bulkDialog.mode === 'category' && 'Chọn lĩnh vực mới cho các văn bản đã chọn.'}
+              {bulkDialog.mode === 'assign' && 'Giao các văn bản đã chọn cho một người thực hiện.'}
+              {bulkDialog.mode === 'assignAll' && 'Giao các văn bản đã chọn cho tất cả mọi người.'}
+            </DialogDescription>
+          </DialogHeader>
+          {bulkDialog.mode === 'archive' ? (
+            <p className="text-sm text-muted-foreground">Hành động này sẽ chuyển các văn bản đã chọn sang trạng thái Lưu trữ.</p>
+          ) : bulkDialog.mode === 'category' ? (
+            <div>
+              <Label>Lĩnh vực mới</Label>
+              <Select value={bulkCategoryId} onValueChange={setBulkCategoryId}>
+                <SelectTrigger><SelectValue placeholder="Chọn lĩnh vực" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Không</SelectItem>
+                  {categoriesData?.data.categories.map((c: { id: string; name: string; color: string }) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {!bulkAssignAll && bulkDialog.mode === 'assign' && (
+                <div>
+                  <Label>Người thực hiện</Label>
+                  <Select value={bulkAssignUserId} onValueChange={setBulkAssignUserId}>
+                    <SelectTrigger><SelectValue placeholder="Chọn người thực hiện" /></SelectTrigger>
+                    <SelectContent>
+                      {assignableUsers.map((u) => <SelectItem key={u.id} value={u.id}>{u.fullName} ({u.username})</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>Hạn xử lý</Label>
+                  <Input type="date" value={bulkDeadline} onChange={(e) => setBulkDeadline(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Mức độ ưu tiên</Label>
+                  <Select value={bulkPriority} onValueChange={(v) => setBulkPriority(v as 'LOW' | 'NORMAL' | 'HIGH')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PRIORITIES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>Ghi chú thêm</Label>
+                <Textarea value={bulkNotes} onChange={(e) => setBulkNotes(e.target.value)} placeholder="Ghi chú thêm (nếu có)" rows={2} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDialog({ open: false, mode: 'assign' })}>Hủy</Button>
+            <Button
+              onClick={() => bulkDialog.mode === 'assign' || bulkDialog.mode === 'assignAll' ? onBulkAssign() : bulkMutation.mutate()}
+              disabled={bulkMutation.isPending}
+              className={bulkDialog.mode === 'archive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
+            >
+              {bulkMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {bulkDialog.mode === 'archive' ? 'Lưu trữ' : bulkDialog.mode === 'category' ? 'Đổi lĩnh vực' : 'Giao việc'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Upload Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
