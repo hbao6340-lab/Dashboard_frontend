@@ -124,6 +124,54 @@ export function DocumentsPage() {
   const [previewDoc, setPreviewDoc] = useState<DocumentRow | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDialog, setBulkDialog] = useState<{ open: boolean; mode: 'assign' | 'assignAll' | 'archive' | 'category' }>({ open: false, mode: 'assign' })
+  const [bulkAssignAll, setBulkAssignAll] = useState(false)
+  const [bulkCategoryId, setBulkCategoryId] = useState('')
+  const [bulkDeadline, setBulkDeadline] = useState('')
+  const [bulkPriority, setBulkPriority] = useState<'LOW' | 'NORMAL' | 'HIGH'>('NORMAL')
+  const [bulkNotes, setBulkNotes] = useState('')
+
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
+  const toggleSelectAll = (onPage: DocumentRow[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      const allSel = onPage.length > 0 && onPage.every((d) => prev.has(d.id))
+      if (allSel) onPage.forEach((d) => next.delete(d.id))
+      else onPage.forEach((d) => next.add(d.id))
+      return next
+    })
+  }
+  const clearSelection = () => setSelectedIds(new Set())
+
+  const bulkMutation = useMutation({
+    mutationFn: async () => {
+      const ids = Array.from(selectedIds)
+      if (bulkDialog.mode === 'archive') {
+        for (const id of ids) await documentApi.deleteDocument(id)
+        return `Đã lưu trữ ${ids.length} văn bản`
+      }
+      if (bulkDialog.mode === 'category') {
+        for (const id of ids) await documentApi.updateDocument(id, { categoryId: bulkCategoryId || undefined } as any)
+        return `Đã đổi lĩnh vực cho ${ids.length} văn bản`
+      }
+      const isoDeadline = bulkDeadline ? new Date(bulkDeadline).toISOString() : undefined
+      if (bulkDialog.mode === 'assignAll') {
+        for (const id of ids) await documentApi.assignAllDocument(id, { deadline: isoDeadline, priority: bulkPriority, notes: bulkNotes || undefined })
+        return `Đã giao cho tất cả mọi người (${ids.length} văn bản)`
+      }
+      return 'Chưa chọn hành động'
+    },
+    onSuccess: (msg: string) => {
+      toast.success(msg)
+      clearSelection()
+      setBulkDialog({ open: false, mode: 'assign' })
+      setBulkAssignAll(false)
+      refetch()
+    },
+    onError: (e: any) => toast.error(e.message || 'Thao tác hàng loạt thất bại'),
+  })
 
   const { data: documentsData, isLoading, refetch } = useDocuments(searchParams)
   const { data: categoriesData } = useCategories()
@@ -269,7 +317,13 @@ export function DocumentsPage() {
   const renderDocumentCard = (doc: DocumentRow) => (
     <div key={doc.id} className="rounded-none border-b last:border-b-0 p-4">
       <div className="flex items-start gap-3">
-        <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 rounded border-gray-300" />
+        <input
+          type="checkbox"
+          checked={selectedIds.has(doc.id)}
+          onChange={() => toggleSelect(doc.id)}
+          className="mt-1 h-4 w-4 shrink-0 rounded border-gray-300"
+          aria-label={`Chọn ${doc.title}`}
+        />
         <DocumentTypeIcon type={doc.type} />
         <div className="min-w-0 flex-1">
           <button
@@ -326,6 +380,9 @@ export function DocumentsPage() {
       </div>
     </div>
   )
+
+  const onPageDocs = (documentsData as any)?.data?.documents ?? []
+  const allOnPageSelected = onPageDocs.length > 0 && onPageDocs.every((d: DocumentRow) => selectedIds.has(d.id))
 
   return (
     <div className="space-y-6">
@@ -413,8 +470,16 @@ export function DocumentsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-12"><input type="checkbox" className="h-4 w-4 rounded border-gray-300" /></TableHead>
-                      <TableHead className="min-w-[300px]">Văn bản</TableHead>
+                      <TableHead className="w-12">
+                      <input
+                        type="checkbox"
+                        aria-label="Chọn tất cả"
+                        checked={allOnPageSelected}
+                        onChange={() => toggleSelectAll(onPageDocs)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                    </TableHead>
+                    <TableHead className="min-w-[300px]">Văn bản</TableHead>
                       <TableHead>Định dạng</TableHead>
                       <TableHead>Lĩnh vực</TableHead>
                       <TableHead>Người tải lên</TableHead>
@@ -427,7 +492,15 @@ export function DocumentsPage() {
                   <TableBody>
                     {documentsData?.data.documents.map((doc: DocumentRow) => (
                       <TableRow key={doc.id}>
-                        <TableCell><input type="checkbox" className="h-4 w-4 rounded border-gray-300" /></TableCell>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            aria-label={`Chọn ${doc.title}`}
+                            checked={selectedIds.has(doc.id)}
+                            onChange={() => toggleSelect(doc.id)}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                        </TableCell>
                         <TableCell className="min-w-[300px]">
                           <div className="flex items-start gap-3">
                             <DocumentTypeIcon type={doc.type} />
