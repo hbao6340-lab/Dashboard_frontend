@@ -1,0 +1,32 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+export default defineConfig({
+    plugins: [react()],
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, './src'),
+        },
+    },
+    build: {
+        target: 'es2020',
+        chunkSizeWarningLimit: 1200,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'vendor-react': ['react', 'react-dom'],
+                    'vendor-recharts': ['recharts'],
+                },
+            },
+        },
+    },
+    server: {
+        port: 3000,
+        proxy: {
+            '/api': {
+                target: 'http://localhost:4000',
+                changeOrigin: true,
+            },
+        },
+    },
+});
