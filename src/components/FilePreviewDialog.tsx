@@ -29,6 +29,8 @@ interface FilePreviewDialogProps {
 
 // Renders every page of a PDF to canvas elements — works on any browser
 // (Windows, iOS Safari, macOS, Android Chrome, Samsung Internet...).
+// If canvas rendering fails (unsupported device/browser), falls back to
+// opening the file in a new tab with the browser's native PDF viewer.
 function PdfViewer({ blobUrl, title }: { blobUrl: string; title: string }) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
 
@@ -42,9 +44,8 @@ function PdfViewer({ blobUrl, title }: { blobUrl: string; title: string }) {
     void (async () => {
       try {
         const pdfjs = await import('pdfjs-dist')
-        const workerUrl = (pdfjs as any).workerSrc || new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString()
         const data = await fetch(blobUrl).then((r) => r.arrayBuffer())
-        const task = (pdfjs as any).getDocument({ data, workerSrc: workerUrl })
+        const task = (pdfjs as any).getDocument({ data })
         loadingTask = task
         const pdf = await task.promise
         if (cancelled) return
@@ -82,13 +83,19 @@ function PdfViewer({ blobUrl, title }: { blobUrl: string; title: string }) {
     <div className="w-full">
       {status === 'loading' && (
         <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" /> Đang tải PDF...
+          <Loader2 className="h-5 w-5 animate-spin" /> Đang mở tệp PDF...
         </div>
       )}
       {status === 'error' && (
-        <div className="py-12 text-center text-muted-foreground">
-          <p>Không mở được tệp PDF này trong trình duyệt.</p>
-          <p className="mt-1 text-sm">Hãy tải xuống và mở bằng ứng dụng đọc PDF (Adobe Reader, iBooks...).</p>
+        <div className="flex flex-col items-center gap-3 py-12 text-center text-muted-foreground">
+          <FileText className="h-12 w-12" />
+          <p>Trình duyệt không mở được tệp PDF này trong trang.</p>
+          <p className="text-sm text-muted-foreground">Hãy mở trong tab mới bằng trình xem PDF của trình duyệt.</p>
+          <div className="mt-2 flex flex-wrap justify-center gap-2">
+            <Button onClick={() => { window.open(blobUrl, '_blank', 'noopener,noreferrer'); }}>
+              <ExternalLink className="mr-2 h-4 w-4" /> Mở trong tab mới
+            </Button>
+          </div>
         </div>
       )}
       <div id="pdf-canvas-host" className="flex-col items-center gap-3 max-h-[64vh] overflow-y-auto p-1" style={{ display: status === 'loading' ? 'none' : 'flex' }} />
