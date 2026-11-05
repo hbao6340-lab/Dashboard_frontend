@@ -265,6 +265,68 @@ export function DocumentsPage() {
   const handleTypeChange = (value: string) => setSearchParams(prev => ({ ...prev, type: value, page: 1 }))
   const handleCategoryChange = (value: string) => setSearchParams(prev => ({ ...prev, categoryId: value, page: 1 }))
 
+  // Responsive card layout on small screens, table on desktop
+  const renderDocumentCard = (doc: DocumentRow) => (
+    <div key={doc.id} className="rounded-none border-b last:border-b-0 p-4">
+      <div className="flex items-start gap-3">
+        <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 rounded border-gray-300" />
+        <DocumentTypeIcon type={doc.type} />
+        <div className="min-w-0 flex-1">
+          <button
+            className="w-full text-left font-medium leading-snug hover:underline break-words"
+            onClick={() => openPreview(doc)}
+          >
+            {doc.title}
+          </button>
+          <p className="mt-0.5 text-xs text-muted-foreground">{doc.documentNumber}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <Badge variant="outline">{doc.type}</Badge>
+            {doc.category && (
+              <Badge style={{ backgroundColor: doc.category.color + '20', color: doc.category.color }}>
+                {doc.category.name}
+              </Badge>
+            )}
+            <StatusBadge status={doc.status} />
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {getInitials(doc.uploadedBy.fullName)} {doc.uploadedBy.fullName} • {formatDate(doc.createdAt)}
+          </p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => openPreview(doc)}>
+              <Eye className="mr-2 h-4 w-4" /> Xem
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleDownload(doc)}>
+              <Download className="mr-2 h-4 w-4" /> Tải xuống
+            </DropdownMenuItem>
+            {canAssign && (
+              <DropdownMenuItem onClick={() => handleAssignClick(doc.id)}>
+                <Clock className="mr-2 h-4 w-4" /> Giao việc (hạn + ưu tiên)
+              </DropdownMenuItem>
+            )}
+            {canUpload && (
+              <DropdownMenuItem onClick={() => handleVersionClick(doc.id)}>
+                <Upload className="mr-2 h-4 w-4" /> Phiên bản mới
+              </DropdownMenuItem>
+            )}
+            {canUpload && <DropdownMenuSeparator />}
+            {canUpload && (
+              <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(doc.id)}>
+                <Archive className="mr-2 h-4 w-4" /> Lưu trữ
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -335,7 +397,7 @@ export function DocumentsPage() {
         </CardContent>
       </Card>
 
-      {/* Documents Table */}
+      {/* Documents — cards on mobile, table on desktop */}
       <Card>
         <CardContent>
           {isLoading ? (
@@ -343,113 +405,118 @@ export function DocumentsPage() {
           ) : documentsData?.data.documents.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">Chưa có văn bản nào</div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12"><input type="checkbox" className="h-4 w-4 rounded border-gray-300" /></TableHead>
-                    <TableHead>Văn bản</TableHead>
-                    <TableHead>Định dạng</TableHead>
-                    <TableHead>Lĩnh vực</TableHead>
-                    <TableHead>Người tải lên</TableHead>
-                    <TableHead>Ngày tải</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead>Người thực hiện</TableHead>
-                    <TableHead className="w-32">Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {documentsData?.data.documents.map((doc: DocumentRow) => (
-                    <TableRow key={doc.id}>
-                      <TableCell><input type="checkbox" className="h-4 w-4 rounded border-gray-300" /></TableCell>
-                      <TableCell className="max-w-xs">
-                        <div className="flex items-center gap-3">
-                          <DocumentTypeIcon type={doc.type} />
-                          <div>
-                            <button className="font-medium truncate hover:underline text-left" onClick={() => openPreview(doc)}>
-                              {doc.title}
-                            </button>
-                            <p className="text-sm text-muted-foreground">{doc.documentNumber}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell><Badge variant="outline">{doc.type}</Badge></TableCell>
-                      <TableCell>
-                        {doc.category ? (
-                          <Badge style={{ backgroundColor: doc.category.color + '20', color: doc.category.color }}>
-                            {doc.category.name}
-                          </Badge>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs text-primary">
-                            {getInitials(doc.uploadedBy.fullName)}
-                          </div>
-                          <span className="text-sm">{doc.uploadedBy.fullName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{formatDate(doc.createdAt)}</TableCell>
-                      <TableCell><StatusBadge status={doc.status} /></TableCell>
-                      <TableCell>
-                        {doc.assignments && doc.assignments.length > 0 ? (
-                          <div className="flex -space-x-2">
-                            {doc.assignments.slice(0, 3).map((a) => (
-                              <div key={a.id} className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs text-primary border-2 border-background" title={a.user.fullName}>
-                                {getInitials(a.user.fullName)}
-                              </div>
-                            ))}
-                            {doc.assignments.length > 3 && (
-                              <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-600 border-2 border-background">
-                                +{doc.assignments.length - 3}
-                              </div>
-                            )}
-                          </div>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openPreview(doc)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              Xem
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDownload(doc)}>
-                              <Download className="mr-2 h-4 w-4" />
-                              Tải xuống
-                            </DropdownMenuItem>
-                            {canAssign && (
-                              <DropdownMenuItem onClick={() => handleAssignClick(doc.id)}>
-                                <Clock className="mr-2 h-4 w-4" />
-                                Giao việc (hạn + ưu tiên)
-                              </DropdownMenuItem>
-                            )}
-                            {canUpload && (
-                              <DropdownMenuItem onClick={() => handleVersionClick(doc.id)}>
-                                <Upload className="mr-2 h-4 w-4" />
-                                Phiên bản mới
-                              </DropdownMenuItem>
-                            )}
-                            {canUpload && <DropdownMenuSeparator />}
-                            {canUpload && (
-                              <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(doc.id)}>
-                                <Archive className="mr-2 h-4 w-4" />
-                                Lưu trữ
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+            <>
+              <div className="divide-y md:hidden">
+                {documentsData?.data.documents.map(renderDocumentCard)}
+              </div>
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12"><input type="checkbox" className="h-4 w-4 rounded border-gray-300" /></TableHead>
+                      <TableHead className="min-w-[300px]">Văn bản</TableHead>
+                      <TableHead>Định dạng</TableHead>
+                      <TableHead>Lĩnh vực</TableHead>
+                      <TableHead>Người tải lên</TableHead>
+                      <TableHead>Ngày tải</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead>Người thực hiện</TableHead>
+                      <TableHead className="w-32">Thao tác</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {documentsData?.data.documents.map((doc: DocumentRow) => (
+                      <TableRow key={doc.id}>
+                        <TableCell><input type="checkbox" className="h-4 w-4 rounded border-gray-300" /></TableCell>
+                        <TableCell className="min-w-[300px]">
+                          <div className="flex items-start gap-3">
+                            <DocumentTypeIcon type={doc.type} />
+                            <div className="min-w-0">
+                              <button className="block w-full max-w-[400px] truncate text-left font-medium hover:underline" onClick={() => openPreview(doc)} title={doc.title}>
+                                {doc.title}
+                              </button>
+                              <p className="text-sm text-muted-foreground">{doc.documentNumber}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell><Badge variant="outline">{doc.type}</Badge></TableCell>
+                        <TableCell>
+                          {doc.category ? (
+                            <Badge style={{ backgroundColor: doc.category.color + '20', color: doc.category.color }} className="whitespace-nowrap">
+                              {doc.category.name}
+                            </Badge>
+                          ) : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs text-primary">
+                              {getInitials(doc.uploadedBy.fullName)}
+                            </div>
+                            <span className="text-sm">{doc.uploadedBy.fullName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{formatDate(doc.createdAt)}</TableCell>
+                        <TableCell><StatusBadge status={doc.status} /></TableCell>
+                        <TableCell>
+                          {doc.assignments && doc.assignments.length > 0 ? (
+                            <div className="flex -space-x-2">
+                              {doc.assignments.slice(0, 3).map((a) => (
+                                <div key={a.id} className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs text-primary border-2 border-background" title={a.user.fullName}>
+                                  {getInitials(a.user.fullName)}
+                                </div>
+                              ))}
+                              {doc.assignments.length > 3 && (
+                                <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-600 border-2 border-background">
+                                  +{doc.assignments.length - 3}
+                                </div>
+                              )}
+                            </div>
+                          ) : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openPreview(doc)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Xem
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDownload(doc)}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Tải xuống
+                              </DropdownMenuItem>
+                              {canAssign && (
+                                <DropdownMenuItem onClick={() => handleAssignClick(doc.id)}>
+                                  <Clock className="mr-2 h-4 w-4" />
+                                  Giao việc (hạn + ưu tiên)
+                                </DropdownMenuItem>
+                              )}
+                              {canUpload && (
+                                <DropdownMenuItem onClick={() => handleVersionClick(doc.id)}>
+                                  <Upload className="mr-2 h-4 w-4" />
+                                  Phiên bản mới
+                                </DropdownMenuItem>
+                              )}
+                              {canUpload && <DropdownMenuSeparator />}
+                              {canUpload && (
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(doc.id)}>
+                                  <Archive className="mr-2 h-4 w-4" />
+                                  Lưu trữ
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
 
           {/* Pagination */}
