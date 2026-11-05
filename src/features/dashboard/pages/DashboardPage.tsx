@@ -1,9 +1,10 @@
 // Dashboard Page — live stats, charts, documents grouped by Đoàn work tags
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users, FileText, CheckSquare, AlertTriangle, Clock, TrendingUp, Loader2 } from 'lucide-react'
+import { Users, FileText, CheckSquare, AlertTriangle, Clock, TrendingUp, Loader2, ArrowRight } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 import { dashboardApi } from '@/services/dashboardApi'
 import { documentApi } from '@/services/documentApi'
@@ -18,23 +19,31 @@ import {
 
 const CHART_COLORS = ['#3B82F6', '#8B5CF6', '#F59E0B', '#06B6D4', '#EC4899', '#10B981', '#EF4444', '#6B7280']
 
-function StatCard({ title, value, icon: Icon, iconColor }: { title: string; value: string | number; icon: React.ComponentType<{ className?: string }>; iconColor?: string }) {
+function StatCard({ title, value, icon: Icon, iconColor, onClick }: {
+  title: string
+  value: string | number
+  icon: React.ComponentType<{ className?: string }>
+  iconColor?: string
+  onClick?: () => void
+}) {
   return (
-    <Card>
+    <Card onClick={onClick} className={cn(onClick && 'cursor-pointer transition-shadow hover:shadow-md')}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className={cn('h-4 w-4', iconColor)} />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
+        {onClick && <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">Xem chi tiết <ArrowRight className="h-3 w-3" /></p>}
       </CardContent>
     </Card>
   )
 }
 
 export function DashboardPage() {
+  const navigate = useNavigate()
   const [activeTag, setActiveTag] = useState<string | null>(null)
-  const { data, isLoading, isError } = useQuery({ queryKey: ['dashboard-stats'], queryFn: () => dashboardApi.getStats() })
+  const { data, isLoading, isError, refetch } = useQuery({ queryKey: ['dashboard-stats'], queryFn: () => dashboardApi.getStats() })
 
   // Tag chips come from the live category list (same source as the upload
   // form), so a tag always resolves to the documents filed under it.
@@ -68,18 +77,23 @@ export function DashboardPage() {
   }
 
   if (isError || !data) {
-    return <div className="text-center text-muted-foreground py-12">Không tải được dữ liệu dashboard. Vui lòng thử lại.</div>
+    return (
+      <div className="text-center py-12 space-y-4">
+        <p className="text-muted-foreground">Không tải được dữ liệu dashboard.</p>
+        <button onClick={() => refetch()} className="text-sm font-medium text-primary underline underline-offset-4">Tải lại</button>
+      </div>
+    )
   }
 
   const { stats, charts, recent } = (data as any).data
 
   const statCards = [
-    { title: 'Tổng người dùng', value: stats.totalUsers, icon: Users, iconColor: 'text-blue-500' },
-    { title: 'Văn bản', value: stats.totalDocuments, icon: FileText, iconColor: 'text-green-500' },
-    { title: 'Nhiệm vụ đang thực hiện', value: stats.activeTasks, icon: CheckSquare, iconColor: 'text-orange-500' },
-    { title: 'Quá hạn', value: stats.overdueTasks, icon: AlertTriangle, iconColor: 'text-red-500' },
-    { title: 'Báo cáo chờ duyệt', value: stats.pendingReports, icon: Clock, iconColor: 'text-purple-500' },
-    { title: 'Hoàn thành tháng này', value: stats.completedTasks, icon: TrendingUp, iconColor: 'text-emerald-500' },
+    { title: 'Tổng người dùng', value: stats.totalUsers, icon: Users, iconColor: 'text-blue-500', onClick: undefined as (() => void) | undefined },
+    { title: 'Văn bản', value: stats.totalDocuments, icon: FileText, iconColor: 'text-green-500', onClick: () => navigate('/documents') },
+    { title: 'Nhiệm vụ đang thực hiện', value: stats.activeTasks, icon: CheckSquare, iconColor: 'text-orange-500', onClick: () => navigate('/tasks') },
+    { title: 'Quá hạn', value: stats.overdueTasks, icon: AlertTriangle, iconColor: 'text-red-500', onClick: () => navigate('/tasks') },
+    { title: 'Báo cáo chờ duyệt', value: stats.pendingReports, icon: Clock, iconColor: 'text-purple-500', onClick: () => navigate('/reports') },
+    { title: 'Hoàn thành tháng này', value: stats.completedTasks, icon: TrendingUp, iconColor: 'text-emerald-500', onClick: () => navigate('/tasks') },
   ]
 
   const taskStatusData = charts.tasksByStatus.map((t: any) => ({ name: TASK_STATUSES[t.status] ?? t.status, value: t.count }))
@@ -106,8 +120,10 @@ export function DashboardPage() {
 
       {/* Work tags */}
       <Card>
-        <CardHeader>
-          <CardTitle>Phân loại văn bản theo lĩnh vực</CardTitle>
+        <CardHeader className="cursor-pointer" onClick={() => navigate('/documents')}>
+          <CardTitle className="flex items-center justify-between">
+            Phân loại văn bản theo lĩnh vực <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
@@ -131,13 +147,17 @@ export function DashboardPage() {
           <div className="mt-4 space-y-2">
             {docsToShow.length === 0 && <p className="text-sm text-muted-foreground">Chưa có văn bản trong phân loại này.</p>}
             {docsToShow.slice(0, 8).map((d: any) => (
-              <div key={d.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div>
-                  <p className="font-medium">{d.title}</p>
+              <button
+                key={d.id}
+                onClick={() => navigate('/documents')}
+                className="flex w-full items-center justify-between p-3 rounded-lg bg-muted/50 text-left transition-colors hover:bg-muted"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{d.title}</p>
                   <p className="text-sm text-muted-foreground">{d.documentNumber ?? d.reportNumber ?? ''} • {d.createdAt ? formatDate(d.createdAt) : ''}</p>
                 </div>
-                <Badge variant="outline">{d.status}</Badge>
-              </div>
+                <Badge variant="outline" className="shrink-0">{d.status}</Badge>
+              </button>
             ))}
           </div>
         </CardContent>
@@ -223,7 +243,7 @@ export function DashboardPage() {
 
       {/* Recent activity */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card>
+        <Card className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => navigate('/tasks')}>
           <CardHeader><CardTitle>Nhiệm vụ gần đây</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -240,7 +260,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => navigate('/documents')}>
           <CardHeader><CardTitle>Văn bản gần đây</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -257,7 +277,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cursor-pointer transition-shadow hover:shadow-md" onClick={() => navigate('/reports')}>
           <CardHeader><CardTitle>Báo cáo gần đây</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-3">

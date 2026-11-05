@@ -39,11 +39,31 @@ export function CalendarPage() {
     return Array.from({ length: 42 }, (_, i) => new Date(cursor.y, cursor.m, 1 - lead + i))
   }, [cursor, monthStart])
 
+  // Week view: 7 timetable-style columns around the selected day
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('month')
+  const weekStart = useMemo(() => {
+    const d = new Date(selected)
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+    d.setHours(0, 0, 0, 0)
+    return d
+  }, [selected])
+  const weekDays = useMemo(() =>
+    Array.from({ length: 7 }, (_, i) => new Date(weekStart.getTime() + i * 86400000)),
+  [weekStart])
+  const moveWeek = (dir: number) => {
+    const d = new Date(selected)
+    d.setDate(d.getDate() + dir * 7)
+    setSelected(d)
+  }
+  const queryRange = viewMode === 'week'
+    ? { start: weekStart.toISOString(), end: new Date(weekStart.getTime() + 7 * 86400000).toISOString() }
+    : { start: new Date(cursor.y, cursor.m, 1).toISOString(), end: monthEnd.toISOString() }
+
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['calendar', cursor.y, cursor.m, typeFilter],
+    queryKey: ['calendar', viewMode, queryRange.start, queryRange.end, typeFilter],
     queryFn: () => calendarApi.getEvents({
-      start: new Date(cursor.y, cursor.m, 1).toISOString(),
-      end: monthEnd.toISOString(),
+      start: queryRange.start,
+      end: queryRange.end,
       type: typeFilter || undefined,
     }),
   })
@@ -100,7 +120,11 @@ export function CalendarPage() {
         {/* Month grid */}
         <Card className="xl:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle>Tháng {cursor.m + 1}, {cursor.y}</CardTitle>
+            <CardTitle>
+              {viewMode === 'week'
+                ? `Tuần ${selected.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} – ${new Date(weekDays[6].getTime()).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+                : `Tháng ${cursor.m + 1}, ${cursor.y}`}
+            </CardTitle>
             <div className="flex items-center gap-1">
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue placeholder="Tất cả" /></SelectTrigger>
@@ -109,14 +133,65 @@ export function CalendarPage() {
                   {Object.entries(TYPE_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveMonth(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+              <Select value={viewMode} onValueChange={(v) => setViewMode(v as 'week' | 'month')}>
+                <SelectTrigger className="w-[104px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">Tuần</SelectItem>
+                  <SelectItem value="month">Tháng</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewMode === 'week' ? moveWeek(-1) : moveMonth(-1)}><ChevronLeft className="h-4 w-4" /></Button>
               <Button variant="ghost" size="sm" className="h-8" onClick={() => { const t = new Date(); setCursor({ y: t.getFullYear(), m: t.getMonth() }); setSelected(t) }}>Hôm nay</Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => moveMonth(1)}><ChevronRight className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewMode === 'week' ? moveWeek(1) : moveMonth(1)}><ChevronRight className="h-4 w-4" /></Button>
             </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+            ) : viewMode === 'week' ? (
+              <div className="grid grid-cols-7 gap-1">
+                {weekDays.map((day, i) => {
+                  const isToday = sameDay(day, today)
+                  const isSel = sameDay(day, selected)
+                  const dayEvents = byDay.get(dayKey(day)) ?? []
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setSelected(day)}
+                      className={cn(
+                        'min-h-[180px] rounded-lg border p-2 text-left align-top transition-colors',
+                        'bg-card hover:bg-accent/50',
+                        isSel && 'ring-2 ring-primary',
+                      )}
+                    >
+                      <div className="text-center">
+                        <p className="text-[11px] font-medium text-muted-foreground">{WEEKDAYS[i]}</p>
+                        <span className={cn(
+                          'mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold',
+                          isToday && 'bg-primary text-primary-foreground',
+                        )}>
+                          {day.getDate()}
+                        </span>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">{day.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}</p>
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        {dayEvents.map((e: any) => (
+                          <div
+                            key={e.id}
+                            onClick={(ev) => { ev.stopPropagation(); setSelected(day) }}
+                            className="rounded px-1 py-0.5 text-[10px] leading-tight text-white"
+                            style={{ backgroundColor: e.color || TYPE_COLORS[e.type] || '#6B7280' }}
+                            title={`${e.title}${e.description ? ' — ' + e.description : ''}`}
+                          >
+                            {e.title}
+                          </div>
+                        ))}
+                        {dayEvents.length === 0 && <p className="text-[10px] text-muted-foreground/60 text-center mt-3">Trống</p>}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
             ) : (
               <>
                 <div className="grid grid-cols-7 text-center text-xs font-medium text-muted-foreground">
